@@ -49,9 +49,6 @@ for section in range(len(samples)):
 
 # should I have id for the different samples? 
 
-
-
-
 # points that each sample/section has
 # key = points, value = number of sections per sample
 points = {
@@ -79,11 +76,13 @@ points = {
     22 : [106,107,108,108,110]
     }
 
-for section in range(len(samples)):
-    point_list = []
-    #sec = points.values()
-    for pt, sec in points.items():
-        for s in sec:
-            if sec == section:
-                point_list += pt
-            print(point_list)
+#Converts the list of samples to the correct amount of points
+points_for_todays_samples = []
+
+for pt, semp in points.items():
+    for s in semp:
+        for slice in samples:
+            if s == slice:
+                points_for_todays_samples.append(pt)
+print(points_for_todays_samples)
+
