@@ -8,6 +8,7 @@ no one has more than 24 points each day.
 No special cases for the base case. This is only for one day.
 '''
 
+
 #the name of the doctors working this day
 #each doctors starts every day with 0 points
 doctors = {
@@ -42,12 +43,14 @@ samples = [1,4,6,11,35,44,100]
 #divide samples. Remember to update points
 for section in range(len(samples)):
     for doc, pt in doctors.items():
-        check_point()
+        #check_point()
         doctors[doc] += section
-    print(doctors)
+    #print(doctors)
 
-#id for the given sample/section
-#sample_id = [1,2,3,4]
+# should I have id for the different samples? 
+
+
+
 
 # points that each sample/section has
 # key = points, value = number of sections per sample
@@ -76,5 +79,11 @@ points = {
     22 : [106,107,108,108,110]
     }
 
-#s = Optimise()
-s = Solver()
+for section in range(len(samples)):
+    point_list = []
+    #sec = points.values()
+    for pt, sec in points.items():
+        for s in sec:
+            if sec == section:
+                point_list += pt
+            print(point_list)
