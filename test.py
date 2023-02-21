@@ -8,46 +8,15 @@ no one has more than 24 points each day.
 No special cases for the base case. This is only for one day.
 '''
 
+#-----VARIABLES-----
 
-#the name of the doctors working this day
-#each doctors starts every day with 0 points
+#the name of the doctors working this day, starts with 0 points each day
 doctors = {
     'Nils'  : 0,
     'Kari'  : 0,
     'Ola'   : 24,
     'Randi' : 0
     }
-
-#the doctors points. This should be updated whenever a doctor does a job. 
-doctors_points = list(doctors.values())
-
-#name of the doctors.
-doctor = list(doctors.keys())
-
-max_points = 24 #23, 24 or 25 points in average per doctor each day
-
-#check to see if a doctor has reached the desired amount of points per day.
-def check_point():
-    for name, point in doctors.items():
-        if point >= max_points:
-            print(f'{name} is done for the day')
-            #remove from workload
-            #doctors.pop(name)
-        else:
-            print('just keep swimming')
-
-#samples to hand out this day 
-#the values in this list represent number of sections
-samples = [1,4,6,11,35,44,100]
-
-#divide samples. Remember to update points
-for section in range(len(samples)):
-    for doc, pt in doctors.items():
-        #check_point()
-        doctors[doc] += section
-    #print(doctors)
-
-# should I have id for the different samples? 
 
 # points that each sample/section has
 # key = points, value = number of sections per sample
@@ -76,13 +45,59 @@ points = {
     22 : [106,107,108,108,110]
     }
 
-#Converts the list of samples to the correct amount of points
-points_for_todays_samples = []
+max_points = 24 #23, 24 or 25 points in average per doctor each day
 
-for pt, semp in points.items():
-    for s in semp:
-        for slice in samples:
-            if s == slice:
-                points_for_todays_samples.append(pt)
-print(points_for_todays_samples)
+#the samples to hand out this day 
+#the values in this list represent number of sections
+samples = [1,4,6,11,35,44,100]
+
+
+
+#-----CONSTRAINTS-----
+
+#Converts the list of samples to the correct amount of points
+def samples_to_points():
+    points_for_todays_samples = []
+
+    for pt, semp in points.items():
+        for s in semp:
+            for slice in samples:
+                if s == slice:
+                    points_for_todays_samples.append(pt)
+    return points_for_todays_samples
+
+#check to see if a doctor has reached the desired amount of points per day.
+def check_point():
+    for name, point in doctors.items():
+        if point >= max_points:
+            print(f'{name} is done for the day')
+            #remove from workload
+        else:
+            print('just keep swimming')
+
+
+
+#-----LOGICAL FORMULAS-----
+#This will be the SMT part
+s = Solver()
+
+#divide samples. Remember to update points
+for section in range(len(samples)):
+    for doc, pt in doctors.items():
+        #check_point()
+        doctors[doc] += section
+    #print(doctors)
+
+#Divide the samples to the different doctors. Update their points.
+for samp in samples:
+    s.add(Distinct(samp))
+
+
+'''
+-----Questions-----
+* Should I have Id for the different samples? 
+* Do the samples come in all at once or thoughout the day? 
+
+'''
+
 
