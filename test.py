@@ -1,4 +1,5 @@
 from z3 import *
+from z3 import Optimize
 
 '''
 Base case for handing out the given samples each day at the pathology department. 
@@ -17,6 +18,9 @@ doctors = {
     'Ola'   : 24,
     'Randi' : 0
     }
+
+#Number of workers
+n_doctors = len(doctors.keys())
 
 # points that each sample/section has
 # key = points, value = number of sections per sample
@@ -45,11 +49,15 @@ points = {
     22 : [106,107,108,108,110]
     }
 
+#maximum points per doctor
 max_points = 24 #23, 24 or 25 points in average per doctor each day
 
 #the samples to hand out this day 
 #the values in this list represent number of sections
 samples = [1,4,6,11,35,44,100]
+
+#Number of samples
+n_samples = len(samples)
 
 
 
@@ -79,7 +87,7 @@ def check_point():
 
 #-----LOGICAL FORMULAS-----
 #This will be the SMT part
-s = Solver()
+solver = Optimize()
 
 #divide samples. Remember to update points
 for section in range(len(samples)):
@@ -88,11 +96,31 @@ for section in range(len(samples)):
         doctors[doc] += section
     #print(doctors)
 
-#Divide the samples to the different doctors. Update their points.
-for samp in samples:
-    s.add(Distinct(samp))
+#Create variables for the number of points assigned to each doctor for each task
+#Create a matrix where each row represents a doctor and each column represents a task (sample)
+points_assigned = [[Int(f'p_ {i}_{j}') for j in range (n_samples)] for i in range(n_doctors)]
 
+#Add constraints to ensure that each task is assigned to exactly one doctor
+pt = samples_to_points()
+for j in range(n_samples):
+    solver.add(Sum([points_assigned[i][j] for i in range(n_doctors)]) == pt[j]) #her e da noke anna eg må gjera
 
+#Add constraints to ensure that each doctors s assigned at most max_points_per_worker points
+for i in range(n_doctors):
+    solver.add(Sum(points_assigned[i]) <= max_points)
+
+#Add objective function to minimize the difference between the number of points assigned to each doctor
+obj = Sum([Abs(Sum(points_assigned[i]) - Sum(points_assigned[j])) for i in range(n_doctors) for j in range(i+1, n_doctors)])
+solver.minimize(obj)
+
+#Check if the solver is satisfiable and print the solution
+if solver.check() == sat:
+    model = solver.model()
+    for i in range(n_doctors):
+        print(f"Worker {i}: {', '.join([f'Task {j+1}: {model.evaluate(points_assigned[i][j])}' for j in range(n_samples)])}")
+    else: 
+        print('No solution found')
+        
 '''
 -----Questions-----
 * Should I have Id for the different samples? 
