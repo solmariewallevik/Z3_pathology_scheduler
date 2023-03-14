@@ -9,6 +9,8 @@ no one has more than 24 points each day.
 No special cases for the base case. This is only for one day.
 '''
 
+solver = Optimize()
+
 #-----VARIABLES-----
 
 #the name of the doctors working this day, starts with 0 points each day
@@ -19,7 +21,7 @@ doctors = {
     'Randi' : 0
     }
 
-#Number of workers
+#Number of doctors
 n_doctors = len(doctors.keys())
 
 # points that each sample/section has
@@ -53,28 +55,31 @@ points = {
 max_points = 24 #23, 24 or 25 points in average per doctor each day
 
 #the samples to hand out this day 
-#the values in this list represent number of sections
-samples = [1,4,6,11,35,44,100]
+#the values in this list represent number of slices
+slices = [1,4,6,11,35,44,100]
+
+#Converts the list of samples to the correct amount of points
+def slices_to_points():
+    points_for_todays_slices = []
+
+    for pt, semp in points.items():
+        for s in semp:
+            for slice in slices:
+                if s == slice:
+                    points_for_todays_slices.append(pt)
+    return points_for_todays_slices
 
 #Number of samples
-n_samples = len(samples)
+n_samples = len(slices_to_points())
+
+#Create variables for the number of points assigned to each doctor for each task
+#Create a matrix where each row represents a doctor and each column represents a task (sample)
+points_assigned = [[Int(f'p_ {i}_{j}') for j in range (n_samples)] for i in range(n_doctors)]
 
 
 
 #-----CONSTRAINTS-----
-
-#Converts the list of samples to the correct amount of points
-def samples_to_points():
-    points_for_todays_samples = []
-
-    for pt, semp in points.items():
-        for s in semp:
-            for slice in samples:
-                if s == slice:
-                    points_for_todays_samples.append(pt)
-    return points_for_todays_samples
-
-#check to see if a doctor has reached the desired amount of points per day.
+#check to see if a doctor has reached the desired amount of points per day. This is not done.
 def check_point():
     for name, point in doctors.items():
         if point >= max_points:
@@ -84,48 +89,50 @@ def check_point():
             print('just keep swimming')
 
 
+#Add constraints to ensure that each task is assigned to exactly one doctor
+pt = slices_to_points()
+for j in range(n_samples):
+    solver.add(Sum([points_assigned[i][j] for i in range(n_doctors)]) == pt[j]) 
+
+#Add constraints to ensure that each doctors is assigned at most max_points per doctor points
+for i in range(n_doctors):
+    solver.add(Sum(points_assigned[i]) <= max_points)
+
+
 
 #-----LOGICAL FORMULAS-----
 #This will be the SMT part
-solver = Optimize()
 
 #divide samples. Remember to update points
+'''
 for section in range(len(samples)):
     for doc, pt in doctors.items():
         #check_point()
         doctors[doc] += section
-    #print(doctors)
+    #print(doctors) '''
 
-#Create variables for the number of points assigned to each doctor for each task
-#Create a matrix where each row represents a doctor and each column represents a task (sample)
-points_assigned = [[Int(f'p_ {i}_{j}') for j in range (n_samples)] for i in range(n_doctors)]
-
-#Add constraints to ensure that each task is assigned to exactly one doctor
-pt = samples_to_points()
-for j in range(n_samples):
-    solver.add(Sum([points_assigned[i][j] for i in range(n_doctors)]) == pt[j]) #her e da noke anna eg må gjera
-
-#Add constraints to ensure that each doctors s assigned at most max_points_per_worker points
-for i in range(n_doctors):
-    solver.add(Sum(points_assigned[i]) <= max_points)
-
+#Trur denna må bli endra på for å oppnå det eg vil. 
 #Add objective function to minimize the difference between the number of points assigned to each doctor
 obj = Sum([Abs(Sum(points_assigned[i]) - Sum(points_assigned[j])) for i in range(n_doctors) for j in range(i+1, n_doctors)])
 solver.minimize(obj)
 
+#Penalty term to discourage negative values
+#penalty = Sum([If(points_assigned[i][j] >= 0,0, points_assigned[i][j]**2) for i in range (n_samples)])
+#obj += penalty
+
 #Check if the solver is satisfiable and print the solution
 if solver.check() == sat:
     model = solver.model()
+    print(f'Status: {solver.check()}')
     for i in range(n_doctors):
-        print(f"Worker {i}: {', '.join([f'Task {j+1}: {model.evaluate(points_assigned[i][j])}' for j in range(n_samples)])}")
-    else: 
-        print('No solution found')
+        #Må endra på korleis detta blir printa. Det er det som er feilen og at eg får negative verdiar. Det skal det ikkje vere. 
+        print(f"Doctor {i}: {', '.join([f'Sample {j+1}: {model.evaluate(points_assigned[i][j])}' for j in range(n_samples)])}")
+else:
+    print(f'Status: {solver.check()}')
+    print('No solution found')
         
 '''
 -----Questions-----
 * Should I have Id for the different samples? 
 * Do the samples come in all at once or thoughout the day? 
-
 '''
-
-
