@@ -1,42 +1,41 @@
 from z3 import *
 
-# Define the problem parameters
-x = 10 # number of samples
-y = 3 # number of doctors
-max_points = 24 # maximum number of points per doctor
-points_per_sample = [3, 4, 5, 6, 7, 8, 9, 10, 11, 12] # points for each sample
+# Set up the problem data
+num_samples = 10
+num_doctors = 3
 
-# Initialize z3 solver
-s = Solver()
+samples = [f"sample_{i}" for i in range(num_samples)]
+doctors = [f"doctor_{i}" for i in range(num_doctors)]
 
-# Define the variables
-samples = [Int(f"sample_{i}") for i in range(x)] # number of samples assigned to each doctor
-doctors = [Int(f"doctor_{i}") for i in range(y)] # number of points assigned to each doctor
+# Initialize Z3 solver
+solver = Solver()
 
-# Define constraints
-for i in range(y):
-    # Each doctor must have between 0 and max_points points
-    s.add(doctors[i] >= 0)
-    s.add(doctors[i] <= max_points)
-    
-    # Each sample can only be assigned to one doctor
-    sample_constraints = [Or(samples[j] != i, samples[j] == -1) for j in range(x)]
-    s.add(And(sample_constraints))
-    
-    # The sum of the points assigned to each doctor must be less than or equal to max_points
-    doctor_constraints = [If(samples[j] == i, points_per_sample[j], 0) for j in range(x)]
-    s.add(doctors[i] == Sum(doctor_constraints))
-    
-# Add the constraint that each sample must be assigned to exactly one doctor
-sample_constraints = [Or(samples[i] == j, samples[i] == -1) for i in range(x) for j in range(y)]
-s.add(And(sample_constraints))
+# Create variables for each sample-doctor assignment
+assignments = [[Bool(f"{sample}_assigned_to_{doctor}") for doctor in doctors] for sample in samples]
 
-# Solve the problem
-if s.check() == sat:
-    m = s.model()
-    for i in range(y):
-        assigned_samples = [j for j in range(x) if m.eval(samples[j]) == i]
-        points_assigned = sum([points_per_sample[j] for j in assigned_samples])
-        print(f"Doctor {i+1} assigned samples: {assigned_samples}, total points: {points_assigned}")
+# Add constraints to ensure each sample is assigned to exactly one doctor
+for sample_assignments in assignments:
+    solver.add(Or(sample_assignments))
+    solver.add(Not(And(sample_assignments)))
+
+# Add constraints to ensure each sample is assigned to at most one doctor
+for i in range(num_samples):
+    solver.add(sum([If(assignments[i][j], 1, 0) for j in range(num_doctors)]) <= 1)
+
+# Add constraints to limit the number of samples each doctor can receive
+for j in range(num_doctors):
+    num_assigned_samples = sum([If(assignments[i][j], 1, 0) for i in range(num_samples)])
+    solver.add(num_assigned_samples <= 4)  # limit to at most 4 samples per doctor
+
+# Check if there is a valid solution and print the assignments
+if solver.check() == sat:
+    model = solver.model()
+    doctor_assignments = {doctor: [] for doctor in doctors}  # initialize dictionary for each doctor's assignments
+    for i in range(num_samples):
+        for j in range(num_doctors):
+            if is_true(model[assignments[i][j]]):
+                doctor_assignments[doctors[j]].append(samples[i])  # add sample to doctor's assignments
+    for doctor, assigned_samples in doctor_assignments.items():
+        print(f"{doctor} is assigned samples: {', '.join(assigned_samples)}")
 else:
-    print("No solution found")
+    print("No valid assignment found.")
