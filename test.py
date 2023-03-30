@@ -2,7 +2,7 @@ from z3 import *
 import random
 
 # Set up the problem data
-slices = [1,1,1,1,1,1,1,1,1,1] #number of slices
+slices = [1,1,1,1,1,1,1] #number of slices
 num_samples = len(slices) #number of samples
 num_doctors = 3 #number of doctors
 max_points_per_doctor = 24 #the max amount of points for a doctor to have
@@ -10,15 +10,23 @@ max_points_per_doctor = 24 #the max amount of points for a doctor to have
 samples = [f"sample_{i}" for i in range(num_samples)]
 doctors = [f"doctor_{i}" for i in range(num_doctors)] 
 
-
 #FAGGRUPPER. Each doctor has 1 or 2 (some have 3 and some none).
 spes_table = {
-    'u': 'Urogruppen',
-    'x': 'Gynogruppen'
+    'u': 'Uro-group',
+    'x': 'Gyno-group',
+    'p': 'Perinatal-group',
+    'm': 'Mom-group',
+    'g': 'Gastro-group',
+    'h': 'Skin-group',
+    'l': 'Lymfoma-group',
+    's': 'Sarkoma-group',
+    'r': 'ear-nose-thought-group',
+    'y': 'Kidney-group',
+    'oral': 'oral',
+    'nevro': 'nevro'
     }
 path_groups = list(spes_table.keys()) #list of the keys in spes_table
 random.shuffle(path_groups) #shuffle the keys so that they are assigned randomly
-
 
 doctors_spes = {} #create a dictionary to store the assigned faggruppe for each doctor
 #iterate over the list of doctors and assign 1 or 2 faggrupper randomly
@@ -31,14 +39,17 @@ for doctor in doctors:
 
 #print the assigned keys for each doctor.
 for doctor, key_values in doctors_spes.items():
-    print(f"{doctor}: {', '.join(f'{value} ({key})' for key, value in key_values.items())}")
+    print(f"{doctor}: {', '.join(f'{key}' for key, value in key_values.items())}")
 print()
 
+#each sample must be marked with one specialization (faggruppe) What type of sample it is. 
+
+# POINTSYSTEM: points that each sample/section has
 # key = points, value = number of sections per sample
 point_table = {
-    1 : [1,2,3,4,5]
+    1 : [1,2,3,4,5],
+    2 : [6,7,8,9,10]
     }
-
 #Converts the list of samples to the correct amount of points
 def slices_to_points():
     points_for_todays_slices = []
@@ -51,6 +62,12 @@ def slices_to_points():
 
 points = slices_to_points() #list of the points for the samples 
 
+# Create a dictionary to store the assigned path_groups for each sample
+'''
+sample_groups = {}
+for i, sample in enumerate(samples):
+    sample_groups[sample] = path_groups[i]
+'''
 
 # Initialize Z3 solver
 #--------------------------------------------------------------
@@ -61,6 +78,15 @@ assignments = [[Bool(f"{sample}_assigned_to_{doctor}") for doctor in doctors] fo
 
 # Create variables for the total points assigned to each doctor
 points_assigned = [Int(f"{doctor}_points_assigned") for doctor in doctors]
+
+# Create variables for the path_group assigned to each sample
+sample_path_group = [String(f"{sample}_path_group") for sample in samples]
+
+# Assign a random path_group to each sample
+for i in range(num_samples):
+    path_group = path_groups.pop(0)
+    solver.add(sample_path_group[i] == path_group)
+
 
 #----------------------Constraints-------------------------
 
@@ -73,13 +99,12 @@ for sample_assignments in assignments:
 for i in range(num_samples):
     solver.add(sum([If(assignments[i][j], 1, 0) for j in range(num_doctors)]) <= 1)
 
-# Add constraints to limit the number of samples and points each doctor can receive
-# TODO: Need to remove the limitation of amount of sampels per doctor... 
+# Add constraints to limit the number of points each doctor can receive
 for j in range(num_doctors):
     total_assigned_points = sum([If(assignments[i][j], points[i], 0) for i in range(num_samples)]) # assume points is a list containing the number of points for each sample
-    solver.add(total_assigned_points <= 24)  # limit to at most 24 points per doctor
+    solver.add(total_assigned_points <= max_points_per_doctor)  # limit to at most 24 points per doctor
 
-#---------------------------Check---------------------------
+#---------------------------Check-----------------------------
 
 # Check if there is a valid solution and print the assignments
 print(f'Status: {solver.check()}')
@@ -93,6 +118,10 @@ if solver.check() == sat:
     for doctor, assigned_samples in doctor_assignments.items():
         assigned_points = sum([points[samples.index(sample)] for sample in assigned_samples])  # calculate total assigned points for the doctor
         print(f"{doctor} is assigned samples: {', '.join(assigned_samples)} with a total of {assigned_points} points")
+        # Print the assigned path_group for each sample
+    for i in range(num_samples):
+         print(f"{samples[i]}: {model[sample_path_group[i]]}")
+            
 
 else:
     print("No valid assignment found.")

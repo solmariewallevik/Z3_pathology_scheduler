@@ -1,7 +1,6 @@
 from z3 import *
 import random
-import faggrupper
-import problem_setup
+
 # Set up the problem data
 slices = [1,4,6,11,25,2,3,35,44,100] #number of slices
 num_samples = len(slices) #number of samples
@@ -11,25 +10,23 @@ max_points_per_doctor = 24 #the max amount of points for a doctor to have
 samples = [f"sample_{i}" for i in range(num_samples)]
 doctors = [f"doctor_{i}" for i in range(num_doctors)] 
 
-
 #FAGGRUPPER. Each doctor has 1 or 2 (some have 3 and some none).
 spes_table = {
-    'u': 'Urogruppen',
-    'x': 'Gynogruppen',
-    'p': 'Perinatalgruppen',
-    'm': 'Mammagruppen',
-    'g': 'Gastrogruppen',
-    'h': 'Hudgruppen',
-    'l': 'Lymfomgruppen',
-    's': 'Sarkomgruppen',
-    'r': 'øre-nese-hals-gruppen',
-    'y': 'Nyregrupper',
+    'u': 'Uro-group',
+    'x': 'Gyno-group',
+    'p': 'Perinatal-group',
+    'm': 'Mom-group',
+    'g': 'Gastro-group',
+    'h': 'Skin-group',
+    'l': 'Lymfoma-group',
+    's': 'Sarkoma-group',
+    'r': 'ear-nose-thought-group',
+    'y': 'Kidney-group',
     'oral': 'oral',
     'nevro': 'nevro'
     }
-path_groups = list(spes_table.keys()) #list of the keys in spes_table
-random.shuffle(path_groups) #shuffle the keys so that they are assigned randomly
-
+path_groups_doc = list(spes_table.keys()) #list of the keys in spes_table
+random.shuffle(path_groups_doc) #shuffle the keys so that they are assigned randomly
 
 doctors_spes = {} #create a dictionary to store the assigned faggruppe for each doctor
 #iterate over the list of doctors and assign 1 or 2 faggrupper randomly
@@ -37,15 +34,14 @@ for doctor in doctors:
     num_keys = random.randint(1,2)
     doctors_spes[doctor] = {}
     for i in range(num_keys):
-        key = path_groups.pop(0)
+        key = path_groups_doc.pop(0)
         doctors_spes[doctor][key] = spes_table[key]
 
 #print the assigned keys for each doctor.
 for doctor, key_values in doctors_spes.items():
-    print(f"{doctor}: {', '.join(f'{value} ({key})' for key, value in key_values.items())}")
+    print(f"{doctor}: {', '.join(f'{key}' for key, value in key_values.items())}")
 print()
 
-#each sample must be marked with one specialization (faggruppe) What type of sample it is. 
 
 # POINTSYSTEM: points that each sample/section has
 # key = points, value = number of sections per sample
@@ -71,7 +67,7 @@ point_table = {
     19 : [91,92,93,94,95],
     20 : [96,97,98,99,100],
     21 : [101,102,103,104,105],
-    22 : [106,107,108,108,110]
+    22 : [106,107,108,109,110]
     }
 #Converts the list of samples to the correct amount of points
 def slices_to_points():
@@ -84,6 +80,26 @@ def slices_to_points():
     return points_for_todays_slices
 
 points = slices_to_points() #list of the points for the samples 
+
+path_groups_samp = list(spes_table.keys()) #list of the keys in spes_table
+random.shuffle(path_groups_samp) #shuffle the keys so that they are assigned randomly
+
+# Create a dictionary to store the assigned path_groups for each sample
+sample_groups = {}
+
+#iterate over the list of doctors and assign 1 or 2 faggrupper randomly
+for sample in samples: 
+    num_keys = random.randint(1,1)
+    sample_groups[sample] = {}
+    for i in range(num_keys):
+        key = path_groups_samp.pop(0)
+        sample_groups[sample][key] = spes_table[key]
+
+#print the assigned keys for each doctor.
+for sample, key_values in sample_groups.items():
+    print(f"{sample}: {', '.join(f'{key}' for key, value in key_values.items())}")
+print()
+
 
 
 # Initialize Z3 solver
@@ -110,7 +126,7 @@ for i in range(num_samples):
 # Add constraints to limit the number of points each doctor can receive
 for j in range(num_doctors):
     total_assigned_points = sum([If(assignments[i][j], points[i], 0) for i in range(num_samples)]) # assume points is a list containing the number of points for each sample
-    solver.add(total_assigned_points <= 24)  # limit to at most 24 points per doctor
+    solver.add(total_assigned_points <= max_points_per_doctor)  # limit to at most 24 points per doctor
 
 #---------------------------Check-----------------------------
 
