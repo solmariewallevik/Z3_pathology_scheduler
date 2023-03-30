@@ -1,5 +1,7 @@
 from z3 import *
-
+import random
+import faggrupper
+import problem_setup
 # Set up the problem data
 slices = [1,4,6,11,25,2,3,35,44,100] #number of slices
 num_samples = len(slices) #number of samples
@@ -7,9 +9,45 @@ num_doctors = 3 #number of doctors
 max_points_per_doctor = 24 #the max amount of points for a doctor to have
 
 samples = [f"sample_{i}" for i in range(num_samples)]
-doctors = [f"doctor_{i}" for i in range(num_doctors)]
+doctors = [f"doctor_{i}" for i in range(num_doctors)] 
 
-# points that each sample/section has
+
+#FAGGRUPPER. Each doctor has 1 or 2 (some have 3 and some none).
+spes_table = {
+    'u': 'Urogruppen',
+    'x': 'Gynogruppen',
+    'p': 'Perinatalgruppen',
+    'm': 'Mammagruppen',
+    'g': 'Gastrogruppen',
+    'h': 'Hudgruppen',
+    'l': 'Lymfomgruppen',
+    's': 'Sarkomgruppen',
+    'r': 'øre-nese-hals-gruppen',
+    'y': 'Nyregrupper',
+    'oral': 'oral',
+    'nevro': 'nevro'
+    }
+path_groups = list(spes_table.keys()) #list of the keys in spes_table
+random.shuffle(path_groups) #shuffle the keys so that they are assigned randomly
+
+
+doctors_spes = {} #create a dictionary to store the assigned faggruppe for each doctor
+#iterate over the list of doctors and assign 1 or 2 faggrupper randomly
+for doctor in doctors: 
+    num_keys = random.randint(1,2)
+    doctors_spes[doctor] = {}
+    for i in range(num_keys):
+        key = path_groups.pop(0)
+        doctors_spes[doctor][key] = spes_table[key]
+
+#print the assigned keys for each doctor.
+for doctor, key_values in doctors_spes.items():
+    print(f"{doctor}: {', '.join(f'{value} ({key})' for key, value in key_values.items())}")
+print()
+
+#each sample must be marked with one specialization (faggruppe) What type of sample it is. 
+
+# POINTSYSTEM: points that each sample/section has
 # key = points, value = number of sections per sample
 point_table = {
     1 : [1,2,3,4,5],
@@ -45,7 +83,7 @@ def slices_to_points():
                     points_for_todays_slices.append(pt)
     return points_for_todays_slices
 
-points = slices_to_points() #list of the points for the samples
+points = slices_to_points() #list of the points for the samples 
 
 
 # Initialize Z3 solver
@@ -69,15 +107,12 @@ for sample_assignments in assignments:
 for i in range(num_samples):
     solver.add(sum([If(assignments[i][j], 1, 0) for j in range(num_doctors)]) <= 1)
 
-# Add constraints to limit the number of samples and points each doctor can receive
-# TODO: Need to remove the limitation of amount of sampels per doctor... 
+# Add constraints to limit the number of points each doctor can receive
 for j in range(num_doctors):
-    num_assigned_samples = sum([If(assignments[i][j], 1, 0) for i in range(num_samples)])
     total_assigned_points = sum([If(assignments[i][j], points[i], 0) for i in range(num_samples)]) # assume points is a list containing the number of points for each sample
-    solver.add(num_assigned_samples <= 4)  # limit to at most 4 samples per doctor
     solver.add(total_assigned_points <= 24)  # limit to at most 24 points per doctor
 
-#---------------------------Check---------------------------
+#---------------------------Check-----------------------------
 
 # Check if there is a valid solution and print the assignments
 print(f'Status: {solver.check()}')
