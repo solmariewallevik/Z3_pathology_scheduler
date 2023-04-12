@@ -33,6 +33,7 @@ print()
 
 doctors_spes = {f'Doctor {i}': [random.choice(list(spes_table.keys()))] for i in range(num_doctors)}
 print(doctors_spes)
+print()
 
 # POINTSYSTEM: points that each sample/section has
 # key = points, value = number of sections per sample
@@ -74,6 +75,7 @@ def slices_to_points():
 #list of the points for the samples 
 points = slices_to_points() 
 print(points)
+print()
 
 
 # Create a dictionary that matches each sample with a doctor based on shared FAGGRUPPE
