@@ -137,3 +137,12 @@ for path_group, samples in path_group_to_samples.items():
         sample_assignments = [assignments[samples.index(sample)][i] for sample in samples if sample in sample_groups.keys()]
         # Add a constraint that ensures all sample_assignments are equal
         solver.add(Or([And(sample_assignments), And([Not(x) for x in sample_assignments])]))
+
+# Create dictionary for each sample-doctor assignment
+#assignments = {(sample, doctor): Bool(f"{sample}_assigned_to_{doctor}") for sample in samples for doctor in doctors}
+
+# Add constraint for each sample to match with a doctor that has the same tag
+#for sample in samples:
+    #solver.add(Or([And(assignments[(sample, doctor)], key in doctors_spes[doctor]) for doctor in doctors for key in sample_groups if key in doctors_spes[doctor]]))
+
+    
