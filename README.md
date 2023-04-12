@@ -1,5 +1,8 @@
 
-# Z3_pathology_scheduler
-Trying to get started with the code for the SMT solver for the pathology department for my master thesis. 
+# Scheduler For The Pathology Department 
+## Using Z3, written in Python
+This is the code created for my master thesis where I am trying to create a solver for their workflow. 
+Hopefully improving their workflow overall. 
 
-Managed to create the code for the base case. Now I need to add more constraints. 
+The plan is to create the base case and gradually add more constraints to reach the end product!
+One thing that is missing for the base case to be finished is to match each tagged sample with a doctor with the same tag. 
