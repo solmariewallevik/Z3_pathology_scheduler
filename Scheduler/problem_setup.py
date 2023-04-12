@@ -1,5 +1,7 @@
 import random
-'''
+import faggrupper
+
+
 # Set up the problem data
 slices = [1,4,6,11,25,2,3,35,44,100] #number of slices
 num_samples = len(slices) #number of samples
@@ -35,22 +37,3 @@ point_table = {
     21 : [101,102,103,104,105],
     22 : [106,107,108,108,110]
     }
-
-#FAGGRUPPER. Each doctor has 1 or 2 (some have 3 and some none).
-spes_table = {
-    'u': 'Urogruppen',
-    'x': 'Gynogruppen',
-    'p': 'Perinatalgruppen',
-    'm': 'Mammagruppen',
-    'g': 'Gastrogruppen',
-    'h': 'Hudgruppen',
-    'l': 'Lymfomgruppen',
-    's': 'Sarkomgruppen',
-    'r': '�re-nese-hals-gruppen',
-    'y': 'Nyregrupper',
-    'oral': 'oral',
-    'nevro': 'nevro'
-    }
-
-print('hello')
-'''

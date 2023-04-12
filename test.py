@@ -14,16 +14,7 @@ doctors = [f"doctor_{i}" for i in range(num_doctors)]
 spes_table = {
     'u': 'Uro-group',
     'x': 'Gyno-group',
-    'p': 'Perinatal-group',
-    'm': 'Mom-group',
-    'g': 'Gastro-group',
-    'h': 'Skin-group',
-    'l': 'Lymfoma-group',
-    's': 'Sarkoma-group',
-    'r': 'ear-nose-thought-group',
-    'y': 'Kidney-group',
-    'oral': 'oral',
-    'nevro': 'nevro'
+    'p': 'Perinatal-group'
     }
 path_groups = list(spes_table.keys()) #list of the keys in spes_table
 random.shuffle(path_groups) #shuffle the keys so that they are assigned randomly
@@ -125,3 +116,24 @@ if solver.check() == sat:
 
 else:
     print("No valid assignment found.")
+
+
+
+
+
+
+# Create a dictionary that maps each unique path_group in sample_groups to a list of samples
+path_group_to_samples = {}
+for sample, path_groups in sample_groups.items():
+    for path_group in path_groups.keys():
+        if path_group not in path_group_to_samples:
+            path_group_to_samples[path_group] = []
+        path_group_to_samples[path_group].append(sample)
+
+# Add constraints that ensure all samples in each path_group are assigned to the same doctor
+for path_group, samples in path_group_to_samples.items():
+    for i in range(num_doctors):
+        # Find all assignments where sample is assigned to doctor i
+        sample_assignments = [assignments[samples.index(sample)][i] for sample in samples if sample in sample_groups.keys()]
+        # Add a constraint that ensures all sample_assignments are equal
+        solver.add(Or([And(sample_assignments), And([Not(x) for x in sample_assignments])]))
