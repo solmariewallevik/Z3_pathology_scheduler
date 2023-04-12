@@ -10,6 +10,7 @@ max_points_per_doctor = 24 #the max amount of points for a doctor to have
 samples = [f"sample_{i}" for i in range(num_samples)]
 doctors = [f"doctor_{i}" for i in range(num_doctors)] 
 
+
 #FAGGRUPPER. Each doctor has 1 or 2 (some have 3 and some none).
 spes_table = {
     'u': 'Uro-group',
@@ -25,6 +26,13 @@ spes_table = {
     'oral': 'oral',
     'nevro': 'nevro'
     }
+
+sample_groups = {i: [random.choice(list(spes_table.keys()))] for i in range(num_samples)}
+print(sample_groups)
+print()
+
+doctors_spes = {f'Doctor {i}': [random.choice(list(spes_table.keys()))] for i in range(num_doctors)}
+print(doctors_spes)
 
 # POINTSYSTEM: points that each sample/section has
 # key = points, value = number of sections per sample
@@ -63,52 +71,12 @@ def slices_to_points():
                     points_for_todays_slices.append(pt)
     return points_for_todays_slices
 
-points = slices_to_points() #list of the points for the samples 
+#list of the points for the samples 
+points = slices_to_points() 
+print(points)
 
-
-# Tag each doctor with a FAGGRUPPE
-def assign_group_to_doctors():
-    path_groups_doc = list(spes_table.keys()) #list of the keys in spes_table
-    random.shuffle(path_groups_doc) #shuffle the keys so that they are assigned randomly
-
-    doctors_spes = {} #create a dictionary to store the assigned faggruppe for each doctor
-    #iterate over the list of doctors and assign 1 or 2 faggrupper randomly
-    for doctor in doctors: 
-        num_keys = random.randint(1,2)
-        doctors_spes[doctor] = {}
-        for i in range(num_keys):
-            key = path_groups_doc.pop(0)
-            doctors_spes[doctor][key] = spes_table[key]
-    return doctors_spes
-#print the assigned keys for each doctor.
-doctors_spes = assign_group_to_doctors()
-for doctor, key_values in doctors_spes.items():
-    print(f"{doctor}: {', '.join(f'{key}' for key, value in key_values.items())}")
-print()
-
-# Tag each sample with a FAGGRUPPE
-def assign_group_to_samples():
-    path_groups_samp = list(spes_table.keys()) #list of the keys in spes_table
-    random.shuffle(path_groups_samp) #shuffle the keys so that they are assigned randomly
-
-    # Create a dictionary to store the assigned path_groups for each sample
-    sample_groups = {}
-    #iterate over the list of doctors and assign 1 or 2 faggrupper randomly
-    for sample in samples: 
-        num_keys = random.randint(1,1)
-        sample_groups[sample] = {}
-        for i in range(num_keys):
-            key = path_groups_samp.pop(0)
-            sample_groups[sample][key] = spes_table[key]
-    return sample_groups
-#print the assigned keys for each doctor.
-sample_groups = assign_group_to_samples()
-for sample, key_values in sample_groups.items():
-    print(f"{sample}: {', '.join(f'{key}' for key, value in key_values.items())}")
-print()
 
 # Create a dictionary that matches each sample with a doctor based on shared FAGGRUPPE
-#should make this into a function later on
 sample_doctor = {}
 for sample, sample_groups in sample_groups.items():
     matched_doctors = []
@@ -118,32 +86,35 @@ for sample, sample_groups in sample_groups.items():
             # Choose a random doctor among the matched doctors for the sample
             sample_doctor[sample] = random.choice(matched_doctors)
 
+# Create a dictionary that maps each doctor to an integer index
+doctor_indices = {doctor: i for i, doctor in enumerate(doctors_spes.keys())}
 
-# Initialize Z3 solver and create variables
+# Create a list of Boolean variables to represent the assignments of samples to doctors
+assignments = [[Bool(f'sample_{i}_doctor{j}') for j in range(num_doctors)] for i in range(num_samples)]
+
+
+
+# Initialize Z3 solver and define variables
 #--------------------------------------------------------------
 solver = Solver()
 
-# Create a dictionary of Z3 integer variables, one for each sample
-sample_vars = {sample: Int(sample) for sample in samples}
-
-# Create variables for each sample-doctor assignment
-assignments = [[Bool(f"{sample}_assigned_to_{doctor}") for doctor in doctors] for sample in samples]
+sample_vars = [Int(f'sample_{i}') for i in range(num_samples)]
+doctor_vars = [Int(f'doctor_{i}') for i in range(num_doctors)]
 
 # Create variables for the total points assigned to each doctor
+#This is not being used... 
 points_assigned = [Int(f"{doctor}_points_assigned") for doctor in doctors]
-
 
 
 #----------------------Constraints-------------------------
 
 # Add constraints to ensure each sample is assigned to exactly one doctor
-for sample_assignments in assignments:
-    solver.add(Or(sample_assignments))
-    solver.add(Not(And(sample_assignments)))
+for i in range(num_samples):
+    solver.add(Or([assignments[i][j] for j in range(num_doctors)]))
 
 # Add constraints to ensure each sample is assigned to at most one doctor
 for i in range(num_samples):
-    solver.add(sum([If(assignments[i][j], 1, 0) for j in range(num_doctors)]) <= 1)
+    solver.add(sum([If(assignments[i][j], 1,0) for j in range(num_doctors)]) <= 1)
 
 # Add constraints to limit the number of points each doctor can receive
 for j in range(num_doctors):
@@ -151,16 +122,18 @@ for j in range(num_doctors):
     solver.add(total_assigned_points <= max_points_per_doctor)  # limit to at most 24 points per doctor
 
 # Add the constraint that each sample is assigned to one doctor
-for sample in samples:
-    solver.add(sample_vars[sample] >= 0, sample_vars[sample] < num_doctors)
+for sample in range(num_samples):
+    solver.add(And(sample_vars[sample] >= 0, sample_vars[sample] < num_doctors))
 
 # Add the constraint that each doctor has at most max_points_per_doctor points
-for doctor in doctors:
-    solver.add(Sum([If(sample_vars[sample] == doctors.index(doctor), points[samples.index(sample)], 0) for sample in samples]) <= max_points_per_doctor)
+for doctor in range(num_doctors):
+    total_assigned_points = Sum([If(sample_vars[sample] == doctor, points[sample],0) for sample in range(num_samples)])
+    solver.add(total_assigned_points <= max_points_per_doctor)
 
 # Add the constraint that each tagged sample is assigned to the tagged doctor
 for sample, doctor in sample_doctor.items():
-    solver.add(sample_vars[sample] == doctors.index(doctor))
+    #solver.add(sample_vars[sample] == list(doctors_spes.keys()).index(doctors))
+    solver.add(assignments[sample][doctor_indices[doctor]] == True)
 
 
 #---------------------------Check-----------------------------
@@ -169,10 +142,7 @@ for sample, doctor in sample_doctor.items():
 print(f'Status: {solver.check()}')
 if solver.check() == sat:
     model = solver.model()
-
-
-    '''
-    print(model)
+    
     doctor_assignments = {doctor: [] for doctor in doctors}  # initialize dictionary for each doctor's assignments
     for i in range(num_samples):
         for j in range(num_doctors):
@@ -181,7 +151,6 @@ if solver.check() == sat:
     for doctor, assigned_samples in doctor_assignments.items():
         assigned_points = sum([points[samples.index(sample)] for sample in assigned_samples])  # calculate total assigned points for the doctor
         print(f"{doctor} is assigned samples: {', '.join(assigned_samples)} with a total of {assigned_points} points")
-    '''
     
 else:
     print("No valid assignment found.")
