@@ -2,6 +2,7 @@ from z3 import *
 import random
 
 # Set up the problem data
+# This is for one week
 days_week = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
 num_doctors = 8 #number of doctors, think 8 per week is normal
 
@@ -9,7 +10,7 @@ num_doctors = 8 #number of doctors, think 8 per week is normal
 def simulate_slices():
     slices = []
     for i in range(1,13):
-        n = random.randint(1,110)
+        n = random.randint(1,50)
         slices.append(n)
     return slices
 
