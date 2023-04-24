@@ -33,9 +33,6 @@ def resource_scheduler(slices, num_doctors):
     samples = [f"sample_{i+1}" for i in range(num_samples)]
     doctors = [f"doctor_{i+1}" for i in range(num_doctors)] #list of doctors
 
-    total_points = {doctor: 0 for doctor in doctors}
-
-
     #FAGGRUPPER. Each doctor has 1 or 2 (some have 3 and some none).
     spes_table = {
         'u': 'Uro-group',
@@ -53,12 +50,7 @@ def resource_scheduler(slices, num_doctors):
         }
 
     sample_groups = {i: [random.choice(list(spes_table.keys()))] for i in range(num_samples)}
-    #print(sample_groups)
-    #print()
-
     doctors_spes = {f'Doctor {i}': [random.choice(list(spes_table.keys()))] for i in range(num_doctors)}
-    #print(doctors_spes)
-    #print()
 
     # POINTSYSTEM: points that each sample/section has
     # key = points, value = number of sections per sample
@@ -99,9 +91,8 @@ def resource_scheduler(slices, num_doctors):
 
     #list of the points for the samples 
     points = slices_to_points() 
-    print(f'Points: {points}')
+    print(f'Points for that day: {points}')
     print()
-
 
     # Create a dictionary that matches each sample with a doctor based on shared FAGGRUPPE
     sample_doctor = {}
@@ -120,19 +111,16 @@ def resource_scheduler(slices, num_doctors):
     assignments = [[Bool(f'sample_{i}_doctor{j}') for j in range(num_doctors)] for i in range(num_samples)]
 
 
-
     # Initialize Z3 solver and define variables
     #--------------------------------------------------------------
     solver = Solver()
 
     sample_vars = [Int(f'sample_{i}') for i in range(num_samples)]
     doctor_vars = [Int(f'doctor_{i}') for i in range(num_doctors)]
-    # total points assigned to each doctor
-    points_assigned = [Int(f"{doctor}_points_assigned") for doctor in doctors]
+    points_assigned = [Int(f"{doctor}_points_assigned") for doctor in doctors] #total points assigned to each doctor
 
 
     #----------------------Constraints-------------------------
-
     # Add constraints to ensure each sample is assigned to exactly one doctor
     for i in range(num_samples):
         solver.add(Or([assignments[i][j] for j in range(num_doctors)]))
@@ -162,7 +150,6 @@ def resource_scheduler(slices, num_doctors):
 
 
     #---------------------------Check-----------------------------
-
     # Check if there is a valid solution and print the assignments
     print(f'Status: {solver.check()}')
     if solver.check() == sat:
@@ -181,7 +168,6 @@ def resource_scheduler(slices, num_doctors):
     else:
         print("No valid assignment found.")
         print()
-
 
 
 # Simulate a week of assignments
