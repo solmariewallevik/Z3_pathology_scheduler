@@ -1,7 +1,8 @@
 {
   "ExpandedNodes": [
-    ""
+    "",
+    "\\Scheduler"
   ],
-  "SelectedNode": "\\scheduler_BaseCase.py",
+  "SelectedNode": "\\Scheduler\\scheduler_BaseCase.py",
   "PreviewInSolutionExplorer": false
 }
