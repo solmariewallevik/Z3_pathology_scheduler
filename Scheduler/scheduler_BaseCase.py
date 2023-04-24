@@ -2,13 +2,29 @@ from z3 import *
 import random
 
 # Set up the problem data
-slices = [1,4,6,11,25,2,3,35,44,100] #number of slices
+def simulate_slices():
+    slices = []
+    for i in range(1,13):
+        n = random.randint(1,110)
+        slices.append(n)
+    return slices
+
+days_of_the_week = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
+
+for day in days_of_the_week:
+    slices = simulate_slices()
+    print(f'{day}: {slices}')
+print()
+
+slices =  simulate_slices() #number of slices
 num_samples = len(slices) #number of samples
-num_doctors = 3 #number of doctors
+num_doctors = 8 #number of doctors, think 8 per week is normal
 max_points_per_doctor = 24 #the max amount of points for a doctor to have
 
 samples = [f"sample_{i}" for i in range(num_samples)]
-doctors = [f"doctor_{i}" for i in range(num_doctors)] 
+doctors = [f"doctor_{i}" for i in range(num_doctors)] #list of doctors
+
+total_points = {doctor: 0 for doctor in doctors}
 
 
 #FAGGRUPPER. Each doctor has 1 or 2 (some have 3 and some none).
@@ -102,9 +118,7 @@ solver = Solver()
 
 sample_vars = [Int(f'sample_{i}') for i in range(num_samples)]
 doctor_vars = [Int(f'doctor_{i}') for i in range(num_doctors)]
-
-# Create variables for the total points assigned to each doctor
-#This is not being used... 
+# total points assigned to each doctor
 points_assigned = [Int(f"{doctor}_points_assigned") for doctor in doctors]
 
 
