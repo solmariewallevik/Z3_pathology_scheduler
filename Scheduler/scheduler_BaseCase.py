@@ -31,6 +31,9 @@ def resource_scheduler(slices, num_doctors):
     num_samples = len(slices) #number of samples
     max_points_per_doctor = 24 #the max amount of points for a doctor to have
 
+    half_day = 11 or 12 #points a doctor who only works half days can earn
+    third_day = 8 #points a doctor who works 1/3 days can earn
+
     samples = [f"sample_{i+1}" for i in range(num_samples)]
     doctors = [f"doctor_{i+1}" for i in range(num_doctors)] #list of doctors
 
@@ -118,6 +121,9 @@ def resource_scheduler(slices, num_doctors):
     # Create a list of Boolean variables to represent the assignments of samples to doctors
     assignments = [[Bool(f'sample_{i}_doctor{j}') for j in range(num_doctors)] for i in range(num_samples)]
 
+    # Fratrekkslisten: list of the extra points each doctor has earned. 
+    fratrekkslisten = {}
+
 
     # Initialize Z3 solver and define variables
     #--------------------------------------------------------------
@@ -174,7 +180,6 @@ def resource_scheduler(slices, num_doctors):
 
             # Find doctors with the same specialization/faggruppe
             doc_spes = list(doctors_spes.values())
-            #same_specialization = [i for i in range(num_doctors) if doc_spes[i] == doc_spes[j] and i != j]
             same_specialization = [i for i in range(num_doctors) if doc_spes[i][0] == doc_spes[j][0] and i != j]
 
             # Calculate the number of doctors in the same specialization
