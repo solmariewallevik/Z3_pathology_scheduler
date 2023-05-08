@@ -2,16 +2,15 @@ from z3 import *
 import random
 
 # Set up the problem data
-# This is for one week
 days_week = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
 #weeks = [1,2,3,4,5]
-num_doctors = 8 #number of doctors, think 8 per week is normal
+num_doctors = 3 #number of doctors, think 8 per week is normal?
 
 # Generate list of random amount of slices
 def simulate_slices():
     slices = []
-    for i in range(1,15):
-        n = random.randint(1,70)
+    for i in range(1,4):
+        n = random.randint(1,10)
         slices.append(n)
     return slices
 
@@ -44,17 +43,11 @@ def resource_scheduler(slices, num_doctors):
     samples = [f"sample_{i+1}" for i in range(num_samples)] #list of samples
     doctors = [f"doctor_{i+1}" for i in range(num_doctors)] #list of doctors
 
-    #doctors = [z3.Bool(f"doctor_{i}") for i in range(num_doctors)]
-    #samples = [z3.Bool(f"sample_{i}") for i in range(num_samples)]
-
     # Create a list of Boolean variables to represent the sickness status of each doctor
-    #doctor_sick = [Bool(f"doctor_{i}_sick") for i in range(num_doctors)]
     #doctor_sick = [False for i in range(num_doctors)]
-    doctor_sick = [z3.Bool(f"is_sick_{i}") for i in range(num_doctors)]
-
-    doctor_sick[2] = True
-    #print(doctor_sick)
-    
+    doctor_sick = [z3.Bool(f"is_sick_{i+1}") for i in range(num_doctors)]
+    doctor_sick[1] = True
+    print(doctor_sick)
 
     #FAGGRUPPER. Each doctor has 1 or 2 (some have 3 and some none).
     spes_table = {
@@ -125,14 +118,13 @@ def resource_scheduler(slices, num_doctors):
             if any(group in sample_groups for group in doctor_groups):
                 matched_doctors.append(doctor)
                 # Choose a random doctor among the matched doctors for the sample
-                sample_doctor[sample] = random.choice(matched_doctors)
+                sample_doctor[sample] = random.choice(matched_doctors) # sample y: doctor x
 
     # Create a dictionary that maps each doctor to an integer index
     doctor_indices = {doctor: i for i, doctor in enumerate(doctors_spes.keys())}
 
     # Create a list of Boolean variables to represent the assignments of samples to doctors
     assignments = [[Bool(f'sample_{i}_doctor{j}') for j in range(num_doctors)] for i in range(num_samples)]
-
 
     # Initialize Z3 solver and define variables
     #--------------------------------------------------------------
@@ -179,25 +171,42 @@ def resource_scheduler(slices, num_doctors):
 
     #-----------------------------------Works ^ -------------------------------------
 
+    for i in range(num_doctors):
+        doc_spes = list(doctors_spes.values()) #sample_doctor instead? 
+        specialization = [j for j in range(num_doctors) if doc_spes[j][0] == doc_spes[i][0] and j != i]
+
     # Constraint: If a doctor is sick (is_sick=True), redistribute their points among doctors with the same specialization
     # and ensure the sick doctor receives no samples
-    for i in range(num_doctors):
-        constraint = z3.Implies(is_sick[i], z3.And(
-            [z3.Not(z3.Or([z3.Bool(f"{samples[j]}_{doctors[i]}") for j in range(num_samples)]))],  # No samples assigned to the sick doctor
-            [z3.ForAll([j], z3.Implies(z3.And(is_sick[j], z3.Equals(specialization[i], specialization[j])),  # Redistribution of points among doctors with the same specialization
-                                       z3.Equals(points[j], points[j] + points[i])))],
-            [z3.Equals(extra_points[i], extra_points[i] + points[i]))]))  # Accumulate extra points for the doctor
-        solver.add(constraint)
+    '''
+    for i in range(num_samples):
+        sick_points = []
 
-    # Add the constraint that at most one doctor can be sick
-    #solver.add(sum([If(doctor_sick[i], 1, 0) for i in range(num_doctors)]) <= 1)
+        for i in range(num_doctors):
+
+            doc_spes = list(doctors_spes.values())
+            specialization = [j for j in range(num_doctors) if doc_spes[j][0] == doc_spes[i][0] and j != i]
+            print(len(doctor_sick))
+
+            sick_points.append(z3.If(
+                z3.And(doctor_sick[j], specialization[i] == specialization[j]), 0,
+                z3.If(specialization[i] == specialization[j], points[j], 0)))
+            solver.add(z3.Sum(points_assigned) == points[i])
+    
+        constraint = z3.Implies(doctor_sick[i], z3.And(
+            z3.Not(z3.Or([z3.Bool(f"{samples[j]}_{doctors[i]}") for j in range(num_samples)])),  # No samples assigned to the sick doctor
+            *[z3.ForAll([j], z3.Implies(z3.And(doctor_sick[j], specialization[i] == specialization[j]),  # Redistribution of points among doctors with the same specialization
+                                        points[j] == points[j] + points[i]))],
+            extra_points[i] == extra_points[i] + points[i])  # Accumulate extra points for the doctor
+        )
+        solver.add(constraint)
+        '''
 
     # Add the constraint that ensures that a sick doctor do not get assigned any samples
     for i in range(num_doctors):
-        constraint = z3.Implies(doctor_sick[i], z3.Not(z3.Or([z3.Bool(f"{samples[j]}_{doctors[i]}") for j in range(num_samples)])))
-        solver.add(constraint)
+        solver.add(z3.Implies(doctor_sick[i], points_assigned[i] == 0))
 
     # Add the constraint for redistributing points if a doctor gets sick
+    '''
     for j in range(num_doctors):
         if doctor_sick[j] == True:
             # Calculate the remaining points to be redistributed
@@ -238,7 +247,7 @@ def resource_scheduler(slices, num_doctors):
 
             # Update the extra points dictionary for the doctor who got sick
             fratrekkslisten[doctors[j]] = extra_points_same_specialization
-
+    '''
                     
 
     #---------------------------Check-----------------------------
@@ -248,12 +257,15 @@ def resource_scheduler(slices, num_doctors):
         model = solver.model()
 
         #print the values in fratrekkslisten
+        '''
         fratrekkslisten_values = {}
         for key, value in fratrekkslisten.items():
             evaluated_value = model.eval(value)
             fratrekkslisten_values[key] = evaluated_value
         for key, value in fratrekkslisten_values.items():
             print(key, ':', value)
+        '''
+        
         
         doctor_assignments = {doctor: [] for doctor in doctors}  # initialize dictionary for each doctor's assignments
         for i in range(num_samples):
