@@ -129,6 +129,75 @@ def resource_scheduler(slices, num_doctors):
     solver.add(total_assigned_points == Sum(points))
 
 
+        # Add the constraint for redistributing points if a doctor gets sick
+    '''
+    for j in range(num_doctors):
+        if doctor_sick[j] == True:
+            # Calculate the remaining points to be redistributed
+            remaining_points = max_points_per_doctor - total_assigned_points
+
+            # Find doctors with the same specialization/faggruppe
+            doc_spes = list(doctors_spes.values())
+            same_specialization = [i for i in range(num_doctors) if doc_spes[i][0] == doc_spes[j][0] and i != j]
+
+            # Calculate the number of doctors in the same specialization
+            num_doctors_same_specialization = len(same_specialization)
+
+            # Calculate the extra points that each doctor in the same specialization should receive
+            extra_points_same_specialization = remaining_points / num_doctors_same_specialization
+
+            # Create variables to represent the extra points for each doctor in the same specialization
+            extra_points = [Real(f"extra_points_{i}") for i in range(num_doctors)]
+
+            # Add constraints for extra points distribution
+            for i in same_specialization:
+                solver.add(extra_points[i] == extra_points_same_specialization)
+                solver.add(total_assigned_points + extra_points[i] == max_points_per_doctor)
+                fratrekkslisten[doctors[i]] = extra_points_same_specialization  # Update the extra points dictionary
+
+            solver.add(total_assigned_points + extra_points[j] == max_points_per_doctor)
+
+            # Update the total_assigned_points variable
+            total_assigned_points = total_assigned_points + extra_points[j]
+
+            # Store the extra work information
+            for i in same_specialization:
+                if i != j:
+                    # Create a Boolean variable to represent if the doctor i does extra work for doctor j
+                    extra_work = Bool(f"extra_work_{i}_{j}")
+                    solver.add(Implies(extra_work, extra_points[i] == extra_points_same_specialization))
+                    # Add the constraint that the extra work is assigned when doctor i does the work for doctor j
+                    solver.add(Implies(assignments[i][j], extra_work))
+
+            # Update the extra points dictionary for the doctor who got sick
+            fratrekkslisten[doctors[j]] = extra_points_same_specialization
+    '''
+
+        # Constraint: If a doctor is sick (is_sick=True), redistribute their points among doctors with the same specialization
+    # and ensure the sick doctor receives no samples
+    '''
+    for i in range(num_samples):
+        sick_points = []
+
+        for i in range(num_doctors):
+
+            doc_spes = list(doctors_spes.values())
+            specialization = [j for j in range(num_doctors) if doc_spes[j][0] == doc_spes[i][0] and j != i]
+            print(len(doctor_sick))
+
+            sick_points.append(z3.If(
+                z3.And(doctor_sick[j], specialization[i] == specialization[j]), 0,
+                z3.If(specialization[i] == specialization[j], points[j], 0)))
+            solver.add(z3.Sum(points_assigned) == points[i])
+    
+        constraint = z3.Implies(doctor_sick[i], z3.And(
+            z3.Not(z3.Or([z3.Bool(f"{samples[j]}_{doctors[i]}") for j in range(num_samples)])),  # No samples assigned to the sick doctor
+            *[z3.ForAll([j], z3.Implies(z3.And(doctor_sick[j], specialization[i] == specialization[j]),  # Redistribution of points among doctors with the same specialization
+                                        points[j] == points[j] + points[i]))],
+            extra_points[i] == extra_points[i] + points[i])  # Accumulate extra points for the doctor
+        )
+        solver.add(constraint)
+        '''
 
 
     '''
@@ -167,6 +236,16 @@ def resource_scheduler(slices, num_doctors):
     print(f'Status: {solver.check()}')
     if solver.check() == sat:
         model = solver.model()
+
+        #print the values in fratrekkslisten
+        '''
+        fratrekkslisten_values = {}
+        for key, value in fratrekkslisten.items():
+            evaluated_value = model.eval(value)
+            fratrekkslisten_values[key] = evaluated_value
+        for key, value in fratrekkslisten_values.items():
+            print(key, ':', value)
+        '''
     
         doctor_assignments = {doctor: [] for doctor in doctors}  # initialize dictionary for each doctor's assignments
         for i in range(num_samples):
