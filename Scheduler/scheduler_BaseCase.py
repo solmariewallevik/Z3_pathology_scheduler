@@ -26,30 +26,24 @@ slices = slices_week(days_week)
 
 #-----------------------------------------------------
 def resource_scheduler(slices, num_doctors):
-    #slices =  simulate_slices() #number of slices
+
     num_samples = len(slices) #number of samples
-    #max_points_per_doctor = 24 #the max amount of points for a doctor to have
-
+    # Create a list of Boolean variables to represent the sickness status of each doctor
     sick = [Bool(f"is_sick_{i+1}") for i in range(num_doctors)]
+    sick[1] = True
 
-
+    #The max amount of points for a doctor to have 
     for doc in range(len(sick)):
         if is_false(doc):
             max_points_per_doctor = 24
         else:
             max_points_per_doctor = 30
 
-
-
     half_day = 11 or 12 #points a doctor who only works half days can earn
     third_day = 8 #points a doctor who works 1/3 days can earn
 
     samples = [f"sample_{i+1}" for i in range(num_samples)] #list of samples
     doctors = [f"doctor_{i+1}" for i in range(num_doctors)] #list of doctors
-
-    # Create a list of Boolean variables to represent the sickness status of each doctor
-    sick = [Bool(f"is_sick_{i+1}") for i in range(num_doctors)]
-    sick[1] = True
 
     #FAGGRUPPER. Each doctor has 1 or 2 (some have 3 and some none).
     spes_table = {
@@ -139,13 +133,10 @@ def resource_scheduler(slices, num_doctors):
     for i in range(num_doctors):
         solver.add(extra_points[i] == 0)
     
-    #points_assigned = [Int(f"{doctor}_points_assigned") for doctor in doctors]
-
     total_points = [Int(f'total_points_{i+1}') for i in range(num_doctors)]
 
     # Store doctors who have earned extra points and the number of extra points they have earned
     fratrekkslisten = {doctor : 0 for doctor in doctors}
-    print(fratrekkslisten)
 
     #----------------------Constraints-------------------------
     # Add constraints to ensure each sample is assigned to exactly one doctor
@@ -204,7 +195,6 @@ def resource_scheduler(slices, num_doctors):
             solver.add(extra_points == fratrekkslisten[doctors[i]])
             solver.add(total_points[i] == Sum([If(assignments[j][i], points[j], 0) for j in range(num_samples)]) + extra_points)
 
-
     #---------------------------Check-----------------------------
     # Check if there is a valid solution and print the assignments
     print(f'Status: {solver.check()}')
@@ -228,9 +218,6 @@ def resource_scheduler(slices, num_doctors):
         #unsat = solver.unsat_core()
         #print(unsat)
         print()
-
-    #return {'model' : solver.model(), 'fratrekkslisten': fratrekkslisten}
-
 
 # Simulate a week of assignments
 for i, day in enumerate(days_week):
