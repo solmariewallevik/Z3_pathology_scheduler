@@ -1,28 +1,51 @@
 from z3 import *
 import random
 
+# Set up the problem data
+days_week = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
+#weeks = [1,2,3,4,5]
+num_doctors = 8 #number of doctors, think 8 per week is normal?
+
+# Generate list of random amount of slices
+def simulate_slices():
+    slices = []
+    for i in range(1,15):
+        n = random.randint(1,15)
+        slices.append(n)
+    return slices
+
+# List of samples ready for each day of the week
+def slices_week(days):
+    samples_week = []
+    for day in days:
+        slices = simulate_slices()
+        samples_week.append(slices)
+    return samples_week
+
+slices = slices_week(days_week)
+
+#-----------------------------------------------------
 def resource_scheduler(slices, num_doctors):
     #slices =  simulate_slices() #number of slices
     num_samples = len(slices) #number of samples
     max_points_per_doctor = 24 #the max amount of points for a doctor to have
 
-    samples = [f"sample_{i+1}" for i in range(num_samples)]
+    half_day = 11 or 12 #points a doctor who only works half days can earn
+    third_day = 8 #points a doctor who works 1/3 days can earn
+
+    samples = [f"sample_{i+1}" for i in range(num_samples)] #list of samples
     doctors = [f"doctor_{i+1}" for i in range(num_doctors)] #list of doctors
+
+    # Create a list of Boolean variables to represent the sickness status of each doctor
+    sick = [Bool(f"is_sick_{i+1}") for i in range(num_doctors)]
+    #sick[1] = True
 
     #FAGGRUPPER. Each doctor has 1 or 2 (some have 3 and some none).
     spes_table = {
         'u': 'Uro-group',
         'x': 'Gyno-group',
         'p': 'Perinatal-group',
-        'm': 'Mom-group',
-        'g': 'Gastro-group',
-        'h': 'Skin-group',
-        'l': 'Lymfoma-group',
-        's': 'Sarkoma-group',
-        'r': 'ear-nose-thought-group',
-        'y': 'Kidney-group',
-        'oral': 'oral',
-        'nevro': 'nevro'
+        'm': 'Mom-group'
         }
 
     sample_groups = {i: [random.choice(list(spes_table.keys()))] for i in range(num_samples)}
@@ -34,25 +57,7 @@ def resource_scheduler(slices, num_doctors):
         1 : [1,2,3,4,5],
         2 : [6,7,8,9,10],
         3 : [11,12,13,14,15],
-        4 : [16,17,18,19,20],
-        5 : [21,22,23,24,25],
-        6 : [26,27,28,29,30],
-        7 : [31,32,33,34,35],
-        8 : [36,37,38,39,40],
-        9 : [41,42,43,44,45],
-        10 : [46,47,48,49,50],
-        11 : [51,52,53,54,55],
-        12 : [56,57,58,59,60],
-        13 : [61,62,63,64,65],
-        14 : [66,67,68,69,70],
-        15 : [71,72,73,74,75],
-        16 : [76,77,78,79,80],
-        17 : [81,82,83,84,85],
-        18 : [86,87,88,89,90],
-        19 : [91,92,93,94,95],
-        20 : [96,97,98,99,100],
-        21 : [101,102,103,104,105],
-        22 : [106,107,108,109,110]
+        4 : [16,17,18,19,20]
         }
 
     # Converts the list of samples to the correct amount of points
@@ -67,8 +72,9 @@ def resource_scheduler(slices, num_doctors):
 
     #list of the points for the samples 
     points = slices_to_points() 
-    print(f'Points for that day: {points}')
-    print()
+    #print(f'Points for that day: {points}')
+    #print()
+    #extra_points = [Int(f'extra_points_{i}') for i in range(num_doctors)]
 
     # Create a dictionary that matches each sample with a doctor based on shared FAGGRUPPE
     sample_doctor = {}
@@ -78,7 +84,7 @@ def resource_scheduler(slices, num_doctors):
             if any(group in sample_groups for group in doctor_groups):
                 matched_doctors.append(doctor)
                 # Choose a random doctor among the matched doctors for the sample
-                sample_doctor[sample] = random.choice(matched_doctors)
+                sample_doctor[sample] = random.choice(matched_doctors) # sample y: doctor x
 
     # Create a dictionary that maps each doctor to an integer index
     doctor_indices = {doctor: i for i, doctor in enumerate(doctors_spes.keys())}
@@ -86,15 +92,17 @@ def resource_scheduler(slices, num_doctors):
     # Create a list of Boolean variables to represent the assignments of samples to doctors
     assignments = [[Bool(f'sample_{i}_doctor{j}') for j in range(num_doctors)] for i in range(num_samples)]
 
-
     # Initialize Z3 solver and define variables
     #--------------------------------------------------------------
     solver = Solver()
 
     sample_vars = [Int(f'sample_{i}') for i in range(num_samples)]
     doctor_vars = [Int(f'doctor_{i}') for i in range(num_doctors)]
-    points_assigned = [Int(f"{doctor}_points_assigned") for doctor in doctors] #total points assigned to each doctor
 
+    #points_assigned = [Int(f"{doctor}_points_assigned") for doctor in doctors] #total points assigned to each doctor
+
+    # Store doctors who have earned extra points and the number of extra points they have earned
+    fratrekkslisten = {}
 
     #----------------------Constraints-------------------------
     # Add constraints to ensure each sample is assigned to exactly one doctor
@@ -107,8 +115,9 @@ def resource_scheduler(slices, num_doctors):
 
     # Add constraints to limit the number of points each doctor can receive
     for j in range(num_doctors):
-        total_assigned_points = sum([If(assignments[i][j], points[i], 0) for i in range(num_samples)]) # assume points is a list containing the number of points for each sample
-        solver.add(total_assigned_points <= max_points_per_doctor)  # limit to at most 24 points per doctor
+        #total_assigned_points
+        tap = sum([If(assignments[i][j], points[i], 0) for i in range(num_samples)]) # assume points is a list containing the number of points for each sample
+        solver.add(tap <= max_points_per_doctor)  # limit to at most 24 points per doctor
 
     # Add the constraint that each sample is assigned to one doctor
     for sample in range(num_samples):
@@ -116,8 +125,9 @@ def resource_scheduler(slices, num_doctors):
 
     # Add the constraint that each doctor has at most max_points_per_doctor points
     for doctor in range(num_doctors):
-        total_assigned_points = Sum([If(sample_vars[sample] == doctor, points[sample],0) for sample in range(num_samples)])
-        solver.add(total_assigned_points <= max_points_per_doctor)
+        #total_assigned_points
+        t = Sum([If(sample_vars[sample] == doctor, points[sample],0) for sample in range(num_samples)])
+        solver.add(t <= max_points_per_doctor)
 
     # Add the constraint that each tagged sample is assigned to the tagged doctor
     for sample, doctor in sample_doctor.items():
@@ -128,125 +138,17 @@ def resource_scheduler(slices, num_doctors):
     total_assigned_points = Sum([If(assignments[i][j], points[i], 0) for i in range(num_samples) for j in range(num_doctors)])
     solver.add(total_assigned_points == Sum(points))
 
-
-        # Add the constraint for redistributing points if a doctor gets sick
-    '''
-    for j in range(num_doctors):
-        if doctor_sick[j] == True:
-            # Calculate the remaining points to be redistributed
-            remaining_points = max_points_per_doctor - total_assigned_points
-
-            # Find doctors with the same specialization/faggruppe
-            doc_spes = list(doctors_spes.values())
-            same_specialization = [i for i in range(num_doctors) if doc_spes[i][0] == doc_spes[j][0] and i != j]
-
-            # Calculate the number of doctors in the same specialization
-            num_doctors_same_specialization = len(same_specialization)
-
-            # Calculate the extra points that each doctor in the same specialization should receive
-            extra_points_same_specialization = remaining_points / num_doctors_same_specialization
-
-            # Create variables to represent the extra points for each doctor in the same specialization
-            extra_points = [Real(f"extra_points_{i}") for i in range(num_doctors)]
-
-            # Add constraints for extra points distribution
-            for i in same_specialization:
-                solver.add(extra_points[i] == extra_points_same_specialization)
-                solver.add(total_assigned_points + extra_points[i] == max_points_per_doctor)
-                fratrekkslisten[doctors[i]] = extra_points_same_specialization  # Update the extra points dictionary
-
-            solver.add(total_assigned_points + extra_points[j] == max_points_per_doctor)
-
-            # Update the total_assigned_points variable
-            total_assigned_points = total_assigned_points + extra_points[j]
-
-            # Store the extra work information
-            for i in same_specialization:
-                if i != j:
-                    # Create a Boolean variable to represent if the doctor i does extra work for doctor j
-                    extra_work = Bool(f"extra_work_{i}_{j}")
-                    solver.add(Implies(extra_work, extra_points[i] == extra_points_same_specialization))
-                    # Add the constraint that the extra work is assigned when doctor i does the work for doctor j
-                    solver.add(Implies(assignments[i][j], extra_work))
-
-            # Update the extra points dictionary for the doctor who got sick
-            fratrekkslisten[doctors[j]] = extra_points_same_specialization
-    '''
-
-        # Constraint: If a doctor is sick (is_sick=True), redistribute their points among doctors with the same specialization
-    # and ensure the sick doctor receives no samples
-    '''
+    # Add a constraint that if a doctor is sick, they cannot be assigned any samples or points
     for i in range(num_samples):
-        sick_points = []
-
-        for i in range(num_doctors):
-
-            doc_spes = list(doctors_spes.values())
-            specialization = [j for j in range(num_doctors) if doc_spes[j][0] == doc_spes[i][0] and j != i]
-            print(len(doctor_sick))
-
-            sick_points.append(z3.If(
-                z3.And(doctor_sick[j], specialization[i] == specialization[j]), 0,
-                z3.If(specialization[i] == specialization[j], points[j], 0)))
-            solver.add(z3.Sum(points_assigned) == points[i])
-    
-        constraint = z3.Implies(doctor_sick[i], z3.And(
-            z3.Not(z3.Or([z3.Bool(f"{samples[j]}_{doctors[i]}") for j in range(num_samples)])),  # No samples assigned to the sick doctor
-            *[z3.ForAll([j], z3.Implies(z3.And(doctor_sick[j], specialization[i] == specialization[j]),  # Redistribution of points among doctors with the same specialization
-                                        points[j] == points[j] + points[i]))],
-            extra_points[i] == extra_points[i] + points[i])  # Accumulate extra points for the doctor
-        )
-        solver.add(constraint)
-        '''
-
-
-    '''
-    # Add constraints to redistribute points if a doctor gets sick
-    for j in range(num_doctors):
-        sick_doctor = Bool('sick_doctor_' + str(j))
-        solver.add(sick_doctor == False)  # assume no doctors are initially sick
-
-        # add constraint to redistribute points if doctor j gets sick
-        for k in range(num_doctors):
-            if k != j:  # don't need to redistribute points to the sick doctor
-                # add constraint to redistribute points to doctor k
-                total_assigned_points_k = Sum([If(assignments[i][k], points[i], 0) for i in range(num_samples)])
-                extra_points_k = max_points_per_doctor - total_assigned_points_k  # calculate how many extra points doctor k can take
-
-                total_assigned_points_j = Sum([If(assignments[i][j], points[i], 0) for i in range(num_samples)])
-                points_to_redistribute = total_assigned_points_j - max_points_per_doctor  # calculate how many points need to be redistributed
-
-                # add constraint to redistribute points only if the sick doctor has been assigned points
-                solver.add(Implies(sick_doctor == True, total_assigned_points_j > 0))
-
-                # add constraint to redistribute points only if doctor k has the same specialization tag as doctor j
-                solver.add(Implies(doctor_vars[k] == doctor_vars[j], extra_points_k >= points_to_redistribute))
-
-                # add constraint to redistribute points to doctor k
-                for i in range(num_samples):
-                    if assignments[i][j] == True:
-                        solver.add(Implies(sample_vars[i] == k, assignments[i][k] == True))  # assign sample i to doctor k
-                        solver.add(Implies(sample_vars[i] == j, assignments[i][j] == False))  # unassign sample i from doctor j
-                        extra_points_k_new = extra_points_k + points[i]
-                        solver.add(Implies(sample_vars[i] == k, extra_points_k_new == extra_points_k + points[i])) # add points to doctor k
-    '''
+        for j in range(num_doctors):
+            solver.add(Implies(sick[j], Not(assignments[i][j])))
 
     #---------------------------Check-----------------------------
     # Check if there is a valid solution and print the assignments
     print(f'Status: {solver.check()}')
     if solver.check() == sat:
-        model = solver.model()
-
-        #print the values in fratrekkslisten
-        '''
-        fratrekkslisten_values = {}
-        for key, value in fratrekkslisten.items():
-            evaluated_value = model.eval(value)
-            fratrekkslisten_values[key] = evaluated_value
-        for key, value in fratrekkslisten_values.items():
-            print(key, ':', value)
-        '''
-    
+        model = solver.model()        
+        
         doctor_assignments = {doctor: [] for doctor in doctors}  # initialize dictionary for each doctor's assignments
         for i in range(num_samples):
             for j in range(num_doctors):
@@ -259,4 +161,15 @@ def resource_scheduler(slices, num_doctors):
     
     else:
         print("No valid assignment found.")
+        #unsat = solver.unsat_core()
+        #print(unsat)
         print()
+
+
+# Simulate a week of assignments
+for i, day in enumerate(days_week):
+    print(day)
+    #print(f"Samples for {day}: {slices[i]}")
+    #print()
+    # Call task allocation program for current day
+    resource_scheduler(slices[i], num_doctors)
