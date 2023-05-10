@@ -147,6 +147,7 @@ def resource_scheduler(slices, num_doctors):
     for i in range(num_samples):
         solver.add(sum([If(assignments[i][j], 1,0) for j in range(num_doctors)]) <= 1)
 
+    #TODO
     # Add constraints to limit the number of points each doctor can receive
     for j in range(num_doctors):
         #total_assigned_points
@@ -157,6 +158,7 @@ def resource_scheduler(slices, num_doctors):
     for sample in range(num_samples):
         solver.add(And(sample_vars[sample] >= 0, sample_vars[sample] < num_doctors))
 
+    # TODO
     # Add the constraint that each doctor has at most max_points_per_doctor points
     for doctor in range(num_doctors):
         #total_assigned_points
@@ -209,14 +211,32 @@ def resource_scheduler(slices, num_doctors):
     for i in range(num_doctors):
         solver.add(total_points[i] == average_points)
 
+    #----------------------------------------------------------#
+    '''
+    # Initialize the remaining points for each doctor
+    remaining_points = [Int(f'remaining_points_{i+1}') for i in range(num_doctors)]
+    for i in range(num_doctors):
+        solver.add(remaining_points[i] == 0)
+
+    # Add constraint to transfer remaining points to the next day
+    for i in range(num_doctors):
+        if not is_true(sick[i]):
+            remaining_points_today = Sum([If(assignments[j][i], points[j], 0) for j in range(num_samples)]) - max_points_per_doctor
+            remaining_points_next_day = remaining_points_today + remaining_points[i]
+            solver.add(remaining_points_next_day >= 0)
+            solver.add(remaining_points[i] == If(remaining_points_next_day >= 0, remaining_points_next_day, 0))
+
+    # Adjust the maximum points for doctors based on remaining points from the previous day
+    for i in range(num_doctors):
+        max_points_today = max_points_per_doctor + remaining_points[i]
+        solver.add(Sum([If(assignments[j][i], points[j], 0) for j in range(num_samples)]) <= max_points_today)
+    '''
    
     #---------------------------Check-----------------------------
     # Check if there is a valid solution and print the assignments
     print(f'Status: {solver.check()}')
     if solver.check() == sat:
         model = solver.model()  
-
-        print(fratrekkslisten)
         
         doctor_assignments = {doctor: [] for doctor in doctors}  # initialize dictionary for each doctor's assignments
         for i in range(num_samples):
