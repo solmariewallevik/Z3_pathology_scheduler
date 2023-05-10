@@ -30,7 +30,7 @@ def resource_scheduler(slices, num_doctors):
     num_samples = len(slices) #number of samples
     # Create a list of Boolean variables to represent the sickness status of each doctor
     sick = [Bool(f"is_sick_{i+1}") for i in range(num_doctors)]
-    sick[1] = True
+    #sick[1] = True
 
     #The max amount of points for a doctor to have 
     for doc in range(len(sick)):
@@ -194,7 +194,20 @@ def resource_scheduler(slices, num_doctors):
             extra_points = Int(f'extra_points_{i+1}')
             solver.add(extra_points == fratrekkslisten[doctors[i]])
             solver.add(total_points[i] == Sum([If(assignments[j][i], points[j], 0) for j in range(num_samples)]) + extra_points)
+    #----------------------Maybe-----------------------------
 
+    # Add constraint to evenly distribute points among doctors
+    #points_per_doctor = [Int(f"points_per_doctor_{i}") for i in range(num_doctors)]
+    total_ass_points = Sum(total_points)
+
+    # Calculate the average points per doctor
+    average_points = total_ass_points == Sum(points) // num_doctors
+
+    # Add constraint to ensure each doctor's points are close to the average
+    for i in range(num_doctors):
+        solver.add(total_points[i] >= average_points)
+        solver.add(total_points[i] <= average_points + 1)
+   
     #---------------------------Check-----------------------------
     # Check if there is a valid solution and print the assignments
     print(f'Status: {solver.check()}')
