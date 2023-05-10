@@ -7,11 +7,15 @@ import Scheduler.problem_setup
 days_week = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
 num_doctors = 10 #number of doctors, think 8 per week is normal
 
+max_points_per_doctor = [24 for i in range(num_doctors)]
+
+#max_points_per_doctor = 24
+
 # Generate list of random amount of slices
 def simulate_slices():
     slices = []
-    for i in range(1,15):
-        n = random.randint(1,80)
+    for i in range(1,23):
+        n = random.randint(1,50)
         slices.append(n)
     return slices
 
@@ -30,4 +34,10 @@ for i, day in enumerate(days_week):
     print(f"Samples for {day}: {slices[i]}")
     print()
     # Call task allocation program for current day
-    Scheduler.problem_setup.resource_scheduler(slices[i], num_doctors)
+    #Scheduler.problem_setup.resource_scheduler(slices[i], num_doctors, max_points_per_doctor)
+    assigned_points = Scheduler.problem_setup.resource_scheduler(slices[i], num_doctors, max_points_per_doctor)
+    print(assigned_points)
+    print()
+    #TODO: add the assigned_points to the max for each doctor.
+    for i in range(len(max_points_per_doctor)):
+        max_points_per_doctor[i] += assigned_points[i]
