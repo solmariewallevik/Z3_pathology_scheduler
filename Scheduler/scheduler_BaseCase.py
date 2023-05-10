@@ -4,13 +4,13 @@ import random
 # Set up the problem data
 days_week = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
 #weeks = [1,2,3,4,5]
-num_doctors = 8 #number of doctors, think 8 per week is normal?
+num_doctors = 10 #number of doctors, think 8 per week is normal?
 
 # Generate list of random amount of slices
 def simulate_slices():
     slices = []
-    for i in range(1,15):
-        n = random.randint(1,15)
+    for i in range(1,10):
+        n = random.randint(1,110)
         slices.append(n)
     return slices
 
@@ -190,14 +190,16 @@ def resource_scheduler(slices, num_doctors):
 
     # Update fratrekkslisten if doctors work extra
     for i in range(num_doctors):
-        if fratrekkslisten.get(doctors[i], 0) > 0:
-            extra_points = Int(f'extra_points_{i+1}')
-            solver.add(extra_points == fratrekkslisten[doctors[i]])
-            solver.add(total_points[i] == Sum([If(assignments[j][i], points[j], 0) for j in range(num_samples)]) + extra_points)
-    #----------------------Maybe-----------------------------
+        if is_true(sick[i]):
+            for i in range(num_doctors):
+                extra_points = Int(f'extra_points_{i+1}')
+                if doctors[i] in fratrekkslisten:
+                    solver.add(extra_points == fratrekkslisten[doctors[i]])
+                else:
+                    solver.add(extra_points == 0)
+                solver.add(total_points[i] == Sum([If(assignments[j][i], points[j], 0) for j in range(num_samples)]) + extra_points)
 
     # Add constraint to evenly distribute points among doctors
-    #points_per_doctor = [Int(f"points_per_doctor_{i}") for i in range(num_doctors)]
     total_ass_points = Sum(total_points)
 
     # Calculate the average points per doctor
@@ -205,8 +207,8 @@ def resource_scheduler(slices, num_doctors):
 
     # Add constraint to ensure each doctor's points are close to the average
     for i in range(num_doctors):
-        solver.add(total_points[i] >= average_points)
-        solver.add(total_points[i] <= average_points + 1)
+        solver.add(total_points[i] == average_points)
+
    
     #---------------------------Check-----------------------------
     # Check if there is a valid solution and print the assignments
