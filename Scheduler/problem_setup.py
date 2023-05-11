@@ -3,7 +3,7 @@ import random
 
 def resource_scheduler(slices, num_doctors, max_points_per_doctor):
 
-    print(f'Max:   {max_points_per_doctor}')
+    print(f'Max points per doctor:   {max_points_per_doctor}')
 
     num_samples = len(slices) #number of samples
     # Create a list of Boolean variables to represent the sickness status of each doctor
@@ -11,19 +11,20 @@ def resource_scheduler(slices, num_doctors, max_points_per_doctor):
     #sick[1] = True
 
     #The max amount of points for a doctor to have 
-    '''
     for doc in sick:
         if is_true(doc):
-            max_points_per_doctor = 30
-        else:
-            max_points_per_doctor = 24
-    '''
+            max_points_per_doctor[doc] = 30
 
     half_day = 11 or 12 #points a doctor who only works half days can earn
     third_day = 8 #points a doctor who works 1/3 days can earn
 
     samples = [f"sample_{i+1}" for i in range(num_samples)] #list of samples
     doctors = [f"doctor_{i+1}" for i in range(num_doctors)] #list of doctors
+
+    #print(f'{doctors[1]} is sick')
+
+    # Create a list of decision variables for each doctor
+    request_physical_sample = [Bool(f"request_sample_{i}") for i in range(num_doctors)]
 
     #FAGGRUPPER. Each doctor has 1 or 2 (some have 3 and some none).
     spes_table = {
@@ -135,8 +136,8 @@ def resource_scheduler(slices, num_doctors, max_points_per_doctor):
         solver.add(tap <= max_points_per_doctor[j])  # limit to at most 24 points per doctor
 
     # Add the constraint that each sample is assigned to one doctor
-    #for sample in range(num_samples):
-        #solver.add(And(sample_vars[sample] >= 0, sample_vars[sample] < num_doctors))
+    for sample in range(num_samples):
+        solver.add(And(sample_vars[sample] >= 0, sample_vars[sample] < num_doctors))
 
     # TODO
     # Add the constraint that each doctor has at most max_points_per_doctor points
@@ -159,7 +160,7 @@ def resource_scheduler(slices, num_doctors, max_points_per_doctor):
         for j in range(num_doctors):
             solver.add(Implies(sick[j], Not(assignments[i][j])))
 
-    #-------------------------------Works ^ ------------------------------#
+    #------------------------------- SICK ------------------------------#
 
     # Should this be here???????????????
     for i in range(num_doctors):
@@ -181,6 +182,8 @@ def resource_scheduler(slices, num_doctors, max_points_per_doctor):
                     solver.add(extra_points == 0)
                 solver.add(total_points[i] == Sum([If(assignments[j][i], points[j], 0) for j in range(num_samples)]) + extra_points)
 
+    #-----------------------EVEN DIST---------------------------
+
     # Add constraint to evenly distribute points among doctors
     total_ass_points = Sum(total_points)
 
@@ -191,26 +194,14 @@ def resource_scheduler(slices, num_doctors, max_points_per_doctor):
     for i in range(num_doctors):
         solver.add(total_points[i] == average_points)
 
-    #----------------------------------------------------------#
-    '''
-    # Initialize the remaining points for each doctor
-    remaining_points = [Int(f'remaining_points_{i+1}') for i in range(num_doctors)]
-    for i in range(num_doctors):
-        solver.add(remaining_points[i] == 0)
+    #----------------------PHYSICAL SAMPLE------------------------------------#
 
-    # Add constraint to transfer remaining points to the next day
-    for i in range(num_doctors):
-        if not is_true(sick[i]):
-            remaining_points_today = Sum([If(assignments[j][i], points[j], 0) for j in range(num_samples)]) - max_points_per_doctor
-            remaining_points_next_day = remaining_points_today + remaining_points[i]
-            solver.add(remaining_points_next_day >= 0)
-            solver.add(remaining_points[i] == If(remaining_points_next_day >= 0, remaining_points_next_day, 0))
+    # Add constraint: Only some doctors request a physical sample
+    solver.add(Or([request_physical_sample[i] for i in range(num_doctors)]))
+    # Doctor 3 and 7 want physical samples as well
+    solver.add(request_physical_sample[2])
+    solver.add(request_physical_sample[6])
 
-    # Adjust the maximum points for doctors based on remaining points from the previous day
-    for i in range(num_doctors):
-        max_points_today = max_points_per_doctor + remaining_points[i]
-        solver.add(Sum([If(assignments[j][i], points[j], 0) for j in range(num_samples)]) <= max_points_today)
-    '''
    
     #---------------------------Check-----------------------------
     # Check if there is a valid solution and print the assignments
@@ -218,6 +209,13 @@ def resource_scheduler(slices, num_doctors, max_points_per_doctor):
     print(f'Status: {solver.check()}')
     if solver.check() == sat:
         model = solver.model()  
+
+        #for i, var in enumerate(sick):
+            #is_sick = model(var)
+            #print(f"Doctor {i+1} is sick: {is_sick}")
+        for i in range(num_doctors):
+            if model[request_physical_sample[i]]:
+                print(f"Doctor {i+1} - Request Physical Sample: True")
         
         doctor_assignments = {doctor: [] for doctor in doctors}  # initialize dictionary for each doctor's assignments
         for i in range(num_samples):
