@@ -193,10 +193,6 @@ def resource_scheduler(slices, num_doctors, max_points_per_doctor):
     # Doctor 3 and 7 want physical samples as well
     solver.add(request_physical_sample[2])
     solver.add(request_physical_sample[6])
-
-    #-------------------------Routine----------------------------#
-    #Add a constraint...
-
    
     #---------------------------Check-----------------------------
     # Check if there is a valid solution and print the assignments
@@ -224,12 +220,10 @@ def resource_scheduler(slices, num_doctors, max_points_per_doctor):
             print(f"{doctor} is assigned samples: {', '.join(assigned_samples)} with a total of {assigned_points} points")
             list_of_all_points.append(assigned_points)
 
-        for points in list_of_all_points:
-            remaining_points = max(24 - points, 0) # change to max instead of 24
+        for max_points, points in zip(max_points_per_doctor, list_of_all_points):
+            remaining_points = max(max_points - points, 0)
             points_for_the_next_day.append(remaining_points)
         return points_for_the_next_day
-
-
     
     else:
         print("No valid assignment found.")
