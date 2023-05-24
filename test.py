@@ -5,7 +5,7 @@ import Scheduler.problem_setup
 # Set up the problem data
 # This is for one week
 days_week = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
-num_doctors = 10 #number of doctors, think 8 per week is normal
+num_doctors = 8 #number of doctors, think 8 per week is normal
 
 max_points_per_doctor = [24 for i in range(num_doctors)]
 #max_points_per_doctor = 24
@@ -26,8 +26,8 @@ print(max_points_per_doctor)
 # Generate list of random amount of slices
 def simulate_slices():
     slices = []
-    for i in range(1,23):
-        n = random.randint(1,20)
+    for i in range(1,40):
+        n = random.randint(1,40)
         slices.append(n)
     return slices
 

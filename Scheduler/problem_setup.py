@@ -104,6 +104,9 @@ def resource_scheduler(slices, num_doctors, max_points_per_doctor):
     #--------------------------------------------------------------
     solver = Solver()
 
+    # Enable proof generation
+    solver.set(unsat_core=True)
+
     sample_vars = [Int(f'sample_{i}') for i in range(num_samples)]
     doctor_vars = [Int(f'doctor_{i}') for i in range(num_doctors)]
 
@@ -227,7 +230,9 @@ def resource_scheduler(slices, num_doctors, max_points_per_doctor):
     
     else:
         print("No valid assignment found.")
-        #unsat = solver.unsat_core()
+        unsat_core = solver.unsat_core()
+        print("Unsatisfiable core:", unsat_core)
+
         print()
         for doc in range(num_doctors):
             points_for_the_next_day.append(0)
