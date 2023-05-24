@@ -6,6 +6,15 @@ days_week = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
 #weeks = [1,2,3,4,5]
 num_doctors = 10 #number of doctors, think 8 per week is normal?
 
+meetings = {
+    'Mammamøte' : 'Tuesday',
+    'Uromøte_Prostata'   : 'Wednesday',
+    'Uromøte_Blære, nyre, testis' : 'Thursday',
+    'ØNH møte'  : 'Monday',
+    'Thorax møte': 'Friday',
+    'Gynmøte'   : 'Monday'
+    }
+
 # Generate list of random amount of slices
 def simulate_slices():
     slices = []

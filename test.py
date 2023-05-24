@@ -6,6 +6,7 @@ import Scheduler.problem_setup
 # This is for one week
 days_week = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
 num_doctors = 8 #number of doctors, think 8 per week is normal
+doctors = [f"doctor_{i+1}" for i in range(num_doctors)]
 
 max_points_per_doctor = [24 for i in range(num_doctors)]
 #max_points_per_doctor = 24
@@ -23,11 +24,39 @@ for i in range(len(doc_routine)):
 
 print(max_points_per_doctor)
 
+# Meeting assigned for that week
+meetings = ['Mammamøte', 'Uromøte', 'ØNH møte', 'Thorax møte', 'Gynmøte']
+random.shuffle(meetings)
+meeting_assignment = {}
+for meeting in meetings:
+    doctor = random.choice(doctors)
+    meeting_assignment.setdefault(doctor, []).append(meeting)
+
+#The special areas of responsibility for the week
+special_resp = ['Frysesnitt/CITO', 'ØNH-CITO', 'Gastro CITO', 'Lymfom/hema']
+random.shuffle(special_resp)
+#Distribute special_resp values to doctors
+special_resp_assignment = {}
+for value in special_resp:
+    doctor = random.choice(doctors)
+    special_resp_assignment.setdefault(doctor, []).append(value)
+    
+#print the assignments
+print('Special responsibilities this week:')
+for doctor, value in special_resp_assignment.items():
+    print(f'{doctor} : {value}')
+print()
+
+print('Meetings this week:')
+for doctor, meeting in meeting_assignment.items():
+    print(f'{doctor} : {meeting}')
+print()
+
 # Generate list of random amount of slices
 def simulate_slices():
     slices = []
-    for i in range(1,40):
-        n = random.randint(1,40)
+    for i in range(1,20):
+        n = random.randint(1,20)
         slices.append(n)
     return slices
 
@@ -46,7 +75,7 @@ for i, day in enumerate(days_week):
     print(day)
     # Call task allocation program for current day
     #Scheduler.problem_setup.resource_scheduler(slices[i], num_doctors, max_points_per_doctor)
-    assigned_points = Scheduler.problem_setup.resource_scheduler(slices[i], num_doctors, max_points_per_doctor)
+    assigned_points = Scheduler.problem_setup.resource_scheduler(slices[i], num_doctors, max_points_per_doctor, special_resp_assignment)
     print(f'Remaining points: {assigned_points}')
     print()
     #TODO: add the assigned_points to the max for each doctor.

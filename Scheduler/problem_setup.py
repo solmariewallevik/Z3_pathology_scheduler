@@ -1,22 +1,18 @@
 from z3 import *
 import random
 
-def resource_scheduler(slices, num_doctors, max_points_per_doctor):
+def resource_scheduler(slices, num_doctors, max_points_per_doctor, special_resp_assignment):
 
     print(f'Max points per doctor:   {max_points_per_doctor}')
 
     num_samples = len(slices) #number of samples
     # Create a list of Boolean variables to represent the sickness status of each doctor
     sick = [Bool(f"is_sick_{i+1}") for i in range(num_doctors)]
-    #sick[1] = True Think this should be done the same way as for request_physical_sample
 
     #The max amount of points for a doctor to have 
     for doc in sick:
         if is_true(doc):
             max_points_per_doctor[doc] = 30
-
-    half_day = 11 or 12 #points a doctor who only works half days can earn
-    third_day = 8 #points a doctor who works 1/3 days can earn
 
     samples = [f"sample_{i+1}" for i in range(num_samples)] #list of samples
     doctors = [f"doctor_{i+1}" for i in range(num_doctors)] #list of doctors
@@ -42,6 +38,17 @@ def resource_scheduler(slices, num_doctors, max_points_per_doctor):
 
     sample_groups = {i: [random.choice(list(spes_table.keys()))] for i in range(num_samples)}
     doctors_spes = {f'Doctor {i}': [random.choice(list(spes_table.keys()))] for i in range(num_doctors)}
+
+    # These are the sampels that come in addition to the other samples. Different point system.  
+    special_samples = {
+        'CITO'          : 2,
+        'nålebiopsi'    : 2,
+        'Beinmarg'      : 2,
+        'M-remisse'     : 2,
+        'Oral'          : 0,
+        'PD-11'         : 1,
+        'Hasteprøve'    : 'vanlig'
+        }
 
     # POINTSYSTEM: points that each sample/section has
     # key = points, value = number of sections per sample
