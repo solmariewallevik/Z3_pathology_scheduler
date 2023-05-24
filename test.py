@@ -28,9 +28,11 @@ print(max_points_per_doctor)
 meetings = ['Mammamøte', 'Uromøte', 'ØNH møte', 'Thorax møte', 'Gynmøte']
 random.shuffle(meetings)
 meeting_assignment = {}
+
 for meeting in meetings:
     doctor = random.choice(doctors)
-    meeting_assignment.setdefault(doctor, []).append(meeting)
+    while doctor not in meeting_assignment: # need to alter this
+        meeting_assignment.setdefault(doctor, []).append(meeting)
 
 #The special areas of responsibility for the week
 special_resp = ['Frysesnitt/CITO', 'ØNH-CITO', 'Gastro CITO', 'Lymfom/hema']
@@ -41,15 +43,15 @@ for value in special_resp:
     doctor = random.choice(doctors)
     special_resp_assignment.setdefault(doctor, []).append(value)
     
+print('Meetings this week:')
+for doctor, meeting in meeting_assignment.items():
+    print(f'{doctor} : {meeting}')
+print()
+
 #print the assignments
 print('Special responsibilities this week:')
 for doctor, value in special_resp_assignment.items():
     print(f'{doctor} : {value}')
-print()
-
-print('Meetings this week:')
-for doctor, meeting in meeting_assignment.items():
-    print(f'{doctor} : {meeting}')
 print()
 
 # Generate list of random amount of slices
