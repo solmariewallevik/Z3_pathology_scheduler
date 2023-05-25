@@ -107,6 +107,20 @@ def resource_scheduler(slices, num_doctors, max_points_per_doctor, special_resp_
     points = slices_to_points() 
     #print(f'Points for that day: {sum(points)}')
 
+    def special_slices_to_points():
+        new_list = []
+        for value in special_sample_slices:
+            if value in point_table[1]:
+                new_list.append(2)
+            else:
+                for key, lst in point_table.items():
+                    if value in lst:
+                        new_list.append(key)
+        return new_list
+
+    #list of the points for the special samples
+    special_points = special_slices_to_points()
+
     # Create a dictionary that matches each sample with a doctor based on shared FAGGRUPPE
     sample_doctor = {}
     for sample, sample_groups in sample_groups.items():
