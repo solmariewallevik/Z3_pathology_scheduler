@@ -7,6 +7,7 @@ def resource_scheduler(slices, num_doctors, max_points_per_doctor, special_resp_
 
     num_samples = len(slices) #number of samples
     num_special_samples = 5
+
     # Create a list of Boolean variables to represent the sickness status of each doctor
     sick = [Bool(f"is_sick_{i+1}") for i in range(num_doctors)]
 
@@ -41,31 +42,21 @@ def resource_scheduler(slices, num_doctors, max_points_per_doctor, special_resp_
     doctors_spes = {f'Doctor {i}': [random.choice(list(spes_table.keys()))] for i in range(num_doctors)}
 
     # These are the sampels that come in addition to the other samples. Different point system.  
-    special_samples = {
-        'CITO'          : 2, #hasteprøve
-        'nålebiopsi'    : 2,
-        'Beinmarg'      : 2,
-        'M-remisse'     : 2,
-        'Oral'          : 0,
-        'PD-11'         : 1,
-        'Hasteprøve'    : 'vanlig'
-        }
+    special_samples = ['CITO','nålebiopsi','Beinmarg','M-remisse','Oral','PD-11','Hasteprøve']
 
     # List with names of the special sampels that day
-    list_of_special_samp = []
+    todays_special_samples = []
     for i in range(num_special_samples):
-        list_of_special_samp.append(random.choice(list(special_samples.keys())))
-
-    # List of special samples with index
-    special_sample_list = {f'Special Sample {i}': [list_of_special_samp[i] for i in range(num_special_samples)]}
+        todays_special_samples.append(f'{random.choice(special_samples)}_{i+1}')
 
     # List with number of slices per special sample
-    special_sample_slices = []
+    todays_special_sample_slices = []
     for samp in range(num_special_samples):
-        special_sample_slices.append(random.randint(1,110))
-        
-    special_sample_dict = {key: value for key, value in zip(list_of_special_samp, special_sample_slices)}
+        todays_special_sample_slices.append(random.randint(1,20)) # NUMBER OF SLICES GENERATED
 
+    #dictionary of the sample and the num of slices
+    spes_samp_and_slice = dict(zip(todays_special_samples, todays_special_sample_slices))
+        
     # POINTSYSTEM: points that each sample/section has
     # key = points, value = number of sections per sample
     point_table = {
@@ -107,19 +98,29 @@ def resource_scheduler(slices, num_doctors, max_points_per_doctor, special_resp_
     points = slices_to_points() 
     #print(f'Points for that day: {sum(points)}')
 
+    for index, item in enumerate(todays_special_samples):
+        print(f"The item '{item}' is at index {index+1}.")
+
+    #Convert the list of special samples to the correct amount of points
     def special_slices_to_points():
         new_list = []
-        for value in special_sample_slices:
-            if value in point_table[1]:
+        for key, value in spes_samp_and_slice.items():
+            if key.startswith('Oral_'):
+                new_list.append(0)
+            elif key.startswith('PD-11'):
+                new_list.append(1)
+            elif value in point_table[1]:
                 new_list.append(2)
             else:
-                for key, lst in point_table.items():
+                for ky, lst in point_table.items():
                     if value in lst:
-                        new_list.append(key)
+                        new_list.append(ky)
         return new_list
 
+    print(spes_samp_and_slice)
     #list of the points for the special samples
     special_points = special_slices_to_points()
+    print(special_points)
 
     # Create a dictionary that matches each sample with a doctor based on shared FAGGRUPPE
     sample_doctor = {}
