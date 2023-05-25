@@ -3,13 +3,12 @@ import random
 import Scheduler.problem_setup
 
 # Set up the problem data
-# This is for one week
+# One week
 days_week = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
 num_doctors = 8 #number of doctors, think 8 per week is normal
-doctors = [f"doctor_{i+1}" for i in range(num_doctors)]
+doctors = [f"doctor_{i+1}" for i in range(num_doctors)] # for the meetings and spes. resp.
 
 max_points_per_doctor = [24 for i in range(num_doctors)]
-#max_points_per_doctor = 24
 
 doc_routine = ['full_time' for i in range(num_doctors)]
 doc_routine[5] = '1/2'
@@ -22,22 +21,20 @@ for i in range(len(doc_routine)):
     elif doc_routine[i] == '1/3':
         max_points_per_doctor[i] = 8
 
-print(max_points_per_doctor)
+print(f'Max points per doctor: {max_points_per_doctor}')
 
 # Meeting assigned for that week
 meetings = ['Mammamøte', 'Uromøte', 'ØNH møte', 'Thorax møte', 'Gynmøte']
 random.shuffle(meetings)
 meeting_assignment = {}
-
 for meeting in meetings:
     doctor = random.choice(doctors)
     while doctor not in meeting_assignment: # need to alter this
         meeting_assignment.setdefault(doctor, []).append(meeting)
 
-#The special areas of responsibility for the week
+#The special areas of responsibility for the week (should be passed to the next day)
 special_resp = ['Frysesnitt/CITO', 'ØNH-CITO', 'Gastro CITO', 'Lymfom/hema']
 random.shuffle(special_resp)
-#Distribute special_resp values to doctors
 special_resp_assignment = {}
 for value in special_resp:
     doctor = random.choice(doctors)
@@ -49,7 +46,7 @@ for doctor, meeting in meeting_assignment.items():
 print()
 
 #print the assignments
-print('Special responsibilities this week:')
+print('Responsibilities this week:')
 for doctor, value in special_resp_assignment.items():
     print(f'{doctor} : {value}')
 print()
@@ -71,6 +68,7 @@ def slices_week(days):
     return samples_week
 
 slices = slices_week(days_week)
+
 # Simulate a week of assignments
 for i, day in enumerate(days_week):
     #print(f"Samples for {day}: {slices[i]}")

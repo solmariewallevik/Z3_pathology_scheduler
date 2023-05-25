@@ -6,6 +6,7 @@ def resource_scheduler(slices, num_doctors, max_points_per_doctor, special_resp_
     print(f'Max points per doctor:   {max_points_per_doctor}')
 
     num_samples = len(slices) #number of samples
+    num_special_samples = 5
     # Create a list of Boolean variables to represent the sickness status of each doctor
     sick = [Bool(f"is_sick_{i+1}") for i in range(num_doctors)]
 
@@ -41,7 +42,7 @@ def resource_scheduler(slices, num_doctors, max_points_per_doctor, special_resp_
 
     # These are the sampels that come in addition to the other samples. Different point system.  
     special_samples = {
-        'CITO'          : 2,
+        'CITO'          : 2, #hasteprøve
         'nålebiopsi'    : 2,
         'Beinmarg'      : 2,
         'M-remisse'     : 2,
@@ -49,6 +50,21 @@ def resource_scheduler(slices, num_doctors, max_points_per_doctor, special_resp_
         'PD-11'         : 1,
         'Hasteprøve'    : 'vanlig'
         }
+
+    # List with names of the special sampels that day
+    list_of_special_samp = []
+    for i in range(num_special_samples):
+        list_of_special_samp.append(random.choice(list(special_samples.keys())))
+
+    # List of special samples with index
+    special_sample_list = {f'Special Sample {i}': [list_of_special_samp[i] for i in range(num_special_samples)]}
+
+    # List with number of slices per special sample
+    special_sample_slices = []
+    for samp in range(num_special_samples):
+        special_sample_slices.append(random.randint(1,110))
+        
+    special_sample_dict = {key: value for key, value in zip(list_of_special_samp, special_sample_slices)}
 
     # POINTSYSTEM: points that each sample/section has
     # key = points, value = number of sections per sample
