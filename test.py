@@ -13,6 +13,7 @@ max_points_per_doctor = [24 for i in range(num_doctors)]
 doc_routine = ['full_time' for i in range(num_doctors)]
 doc_routine[5] = '1/2'
 
+# Point to earn with the different routines
 for i in range(len(doc_routine)):
     if doc_routine[i] == 'full_time':
         max_points_per_doctor[i] = 24
@@ -33,7 +34,7 @@ for meeting in meetings:
         meeting_assignment.setdefault(doctor, []).append(meeting)
 
 #The special areas of responsibility for the week (should be passed to the next day)
-special_resp = ['Frysesnitt/CITO', 'ØNH-CITO', 'Gastro CITO', 'Lymfom/hema']
+special_resp = ['CITO', 'ØNH-CITO', 'Gastro CITO', 'Lymfom/hema']
 random.shuffle(special_resp)
 special_resp_assignment = {}
 for value in special_resp:
@@ -45,7 +46,6 @@ for doctor, meeting in meeting_assignment.items():
     print(f'{doctor} : {meeting}')
 print()
 
-#print the assignments
 print('Responsibilities this week:')
 for doctor, value in special_resp_assignment.items():
     print(f'{doctor} : {value}')
