@@ -136,6 +136,23 @@ def resource_scheduler(slices, num_doctors, max_points_per_doctor, special_resp_
                 # Choose a random doctor among the matched doctors for the sample
                 sample_doctor[sample] = random.choice(matched_doctors) # sample y: doctor x
 
+    print(sample_doctor)
+
+    #special_resp = ['CITO', 'ØNH CITO', 'Gastro CITO', 'Lymfom/hema']
+    #special_samples = ['CITO','nålebiopsi','Beinmarg','M-remisse','Oral','PD-11','Hasteprøve', 'ØNH CITO', 'Gastro CITO']
+
+    # Create a dictionary that matches the special samples with the doctor with that responsibility    
+    spa = special_resp_assignment   
+    print(f'todays spes sampels: {todays_special_samples}')
+    matched_resp = {}
+    for doc, resp in spa.items():
+        for samp in todays_special_samples:
+            samp_name = samp.rstrip('_1234567890')
+            resp_name = resp[0]
+            if samp_name == resp_name:
+                matched_resp[doc] = samp_name
+    print(matched_resp)
+
     # Create a dictionary that maps each doctor to an integer index
     doctor_indices = {doctor: i for i, doctor in enumerate(doctors_spes.keys())}
 
@@ -214,7 +231,16 @@ def resource_scheduler(slices, num_doctors, max_points_per_doctor, special_resp_
         #solver.add(sample_vars[sample] == list(doctors_spes.keys()).index(doctors))
         solver.add(assignments[sample][doctor_indices[doctor]] == True)
 
-    #TODO: match special samples
+    # Create a dictionary to store the Z3 variables for special sample assignments
+    #special_sample_vars = {sample: [Bool(f"spes_assign_{sample}_{doctor}") for doctor in doctors] for sample in todays_special_samples}
+
+    # Add the constraint that matches the special samples with the doctor who has the same special responsibility
+    #for doc, resp in spa.items():
+        #for i, samp in enumerate(todays_special_samples):
+            #samp_name = samp.rstrip('_1234567890')
+            #for doctor, responsibilities in doctors_spes.items():
+                #if doc == doctor and resp[0] in responsibilities:
+                    #solver.add(special_sample_vars[samp][doctors.index(doctor)])
 
     # Add the constraint that total points assigned to all doctors must equal the sum of points for all samples
     total_assigned_points = Sum([If(assignments[i][j], points[i], 0) for i in range(num_samples) for j in range(num_doctors)])

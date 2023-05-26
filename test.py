@@ -34,7 +34,7 @@ for meeting in meetings:
         meeting_assignment.setdefault(doctor, []).append(meeting)
 
 #The special areas of responsibility for the week (should be passed to the next day)
-special_resp = ['CITO', 'ØNH-CITO', 'Gastro CITO', 'Lymfom/hema']
+special_resp = ['CITO', 'ØNH CITO', 'Gastro CITO', 'Lymfom/hema']
 random.shuffle(special_resp)
 special_resp_assignment = {}
 for value in special_resp:
