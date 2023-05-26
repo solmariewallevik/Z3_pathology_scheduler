@@ -50,7 +50,6 @@ def resource_scheduler(slices, num_doctors, max_points_per_doctor, special_resp_
 
     #dictionary of the sample and the num of slices
     spes_samp_and_slice = dict(zip(todays_special_samples, todays_special_sample_slices))
-    print(spes_samp_and_slice)
         
     # POINTSYSTEM: points that each sample/section has
     # key = points, value = number of sections per sample
@@ -106,7 +105,7 @@ def resource_scheduler(slices, num_doctors, max_points_per_doctor, special_resp_
         return new_list
 
     # Convert the list of special samples to the correct amount of points in a dictionary
-    def special_slices_to_pt():
+    def spes_sample_and_point():
         points_dict = {}
         for key, value in spes_samp_and_slice.items():
             if key.startswith('Oral'):
@@ -122,11 +121,10 @@ def resource_scheduler(slices, num_doctors, max_points_per_doctor, special_resp_
                         break
         return points_dict
 
-    spes_points_dic = special_slices_to_pt()
+    spes_points_dic = spes_sample_and_point()
 
     points = slices_to_points() #list of points for todays samples
     special_points = special_slices_to_points() #list of the points for the special samples
-    print(special_points)
 
     # Create a dictionary that matches each sample with a doctor based on shared FAGGRUPPE
     sample_doctor = {}
@@ -146,7 +144,6 @@ def resource_scheduler(slices, num_doctors, max_points_per_doctor, special_resp_
 
     # Create a list of Boolean variables to represent the assignments of special samples to doctors
     spes_assignments = [[Bool(f'special_sample_{i}_doctor{j}') for j in range(num_doctors)] for i in range(num_special_samples)]
-    #print(spes_assignments)
 
     # Initialize Z3 solver and define variables
     #--------------------------------------------------------------
@@ -185,15 +182,14 @@ def resource_scheduler(slices, num_doctors, max_points_per_doctor, special_resp_
     for i in range(num_special_samples):
         solver.add(sum([If(spes_assignments[i][j], 1, 0) for j in range(num_doctors)]) <= 1)
 
-    # Add constraints to limit the number of points each doctor can receive
     for j in range(num_doctors):
-        #total_assigned_points
-        tap = sum([If(assignments[i][j], points[i], 0) for i in range(num_samples)]) # assume points is a list containing the number of points for each sample
-        solver.add(tap <= max_points_per_doctor[j])
-
-    for i in range(num_doctors):
-        t = sum([If(spes_assignments[k][j], special_points[k], 0) for k in range(num_special_samples)])
-        solver.add(t <= max_points_per_doctor[j])
+        # Calculate total assigned points for regular samples
+        tap_regular = sum([If(assignments[i][j], points[i], 0) for i in range(num_samples)]) # Assuming 'points' is a list containing the number of points for each sample
+        # Calculate total assigned points for special samples
+        tap_special = sum([If(spes_assignments[k][j], special_points[k], 0) for k in range(num_special_samples)]) # Assuming 'special_points' is a list containing the number of points for each special sample
+    
+        # Enforce the constraint that total assigned points (regular + special) for each doctor does not exceed max_points_per_doctor
+        solver.add(tap_regular + tap_special <= max_points_per_doctor[j])
 
     # Add the constraint that each sample is assigned to one doctor
     for sample in range(num_samples):
@@ -205,19 +201,20 @@ def resource_scheduler(slices, num_doctors, max_points_per_doctor, special_resp_
 
     # Add the constraint that each doctor has at most max_points_per_doctor points
     for doctor in range(num_doctors):
-        #total_assigned_points
-        t = Sum([If(sample_vars[sample] == doctor, points[sample],0) for sample in range(num_samples)])
-        solver.add(t <= max_points_per_doctor[doctor])
+        # Calculate total assigned points for regular samples for each doctor
+        t_regular = Sum([If(sample_vars[sample] == doctor, points[sample], 0) for sample in range(num_samples)])
+        # Calculate total assigned points for special samples for each doctor
+        t_special = Sum([If(special_sample_vars[sample] == doctor, special_points[sample], 0) for sample in range(num_special_samples)])
 
-    # Add the constraint that each doctor has at most max_points_per_doctor poinst
-    for doctor in range(num_doctors):
-        t = Sum([If(special_sample_vars[sample] == doctor, special_points[sample],0) for sample in range(num_special_samples)])
-        solver.add(t <= max_points_per_doctor[doctor])
+        # Enforce the constraint that the total assigned points (regular + special) for each doctor does not exceed max_points_per_doctor
+        solver.add(t_regular + t_special <= max_points_per_doctor[doctor])
 
     # Add the constraint that each tagged sample is assigned to the correct tagged doctor
     for sample, doctor in sample_doctor.items():
         #solver.add(sample_vars[sample] == list(doctors_spes.keys()).index(doctors))
         solver.add(assignments[sample][doctor_indices[doctor]] == True)
+
+    #TODO: match special samples
 
     # Add the constraint that total points assigned to all doctors must equal the sum of points for all samples
     total_assigned_points = Sum([If(assignments[i][j], points[i], 0) for i in range(num_samples) for j in range(num_doctors)])
@@ -278,60 +275,34 @@ def resource_scheduler(slices, num_doctors, max_points_per_doctor, special_resp_
     if solver.check() == sat:
         model = solver.model()  
 
-        #for i, var in enumerate(sick):
-            #is_sick = model(var)
-            #print(f"Doctor {i+1} is sick: {is_sick}")
-
         for i in range(num_doctors):
             if model[request_physical_sample[i]]:
                 print(f"Doctor {i+1} - Request Physical Sample: True")
-        
+    
         doctor_assignments = {doctor: [] for doctor in doctors}  # initialize dictionary for each doctor's assignments
+        special_samples_assignments = {doctor: [] for doctor in doctors}  # initialize dictionary for each doctor's special sample assignments
+
+        list_of_all_points = []
+
+        # Add regular sample to doctor's assignments
         for i in range(num_samples):
             for j in range(num_doctors):
                 if is_true(model[assignments[i][j]]):
-                    doctor_assignments[doctors[j]].append(samples[i])  # add sample to doctor's assignments
-        list_of_all_points = []
-        for doctor, assigned_samples in doctor_assignments.items():
-            assigned_points = sum([points[samples.index(sample)] for sample in assigned_samples])  # calculate total assigned points for the doctor
-            print(f"{doctor} is assigned samples: {', '.join(assigned_samples)} with a total of {assigned_points} points")
-            list_of_all_points.append(assigned_points)
-
-        # Add special samples processing
-        special_samples_assignments = {doctor: [] for doctor in doctors}
+                    doctor_assignments[doctors[j]].append(samples[i])
+    
+        # Add special sample to doctor's assignments
         for i in range(num_special_samples):
             for j in range(num_doctors):
                 if is_true(model[spes_assignments[i][j]]):
                     special_samples_assignments[doctors[j]].append(todays_special_samples[i])
 
-
-        #print("Special Samples Assignments:")
-        #for doctor, assigned_samples in special_samples_assignments.items():
-            #print(f"{doctor} is assigned special samples: {', '.join(assigned_samples)}")
-            
-
-        doctor_spes_points = {doctor: sum([spes_points_dic[sample] for sample in assigned_samples]) for doctor, assigned_samples in special_samples_assignments.items()}
-
-        # Print special sample assignments and points for each doctor
-        print("Special Samples Assignments and Points:")
-        for doctor, assigned_samples in special_samples_assignments.items():
-            points = doctor_spes_points[doctor]
-            print(f"{doctor} is assigned special samples: {', '.join(assigned_samples)} with a total of {points} points")
-
-        # Calculate total points for special samples assignments
-        #special_samples_points = sum([special_points[sample] for sample in special_samples_assignments[doctor] for doctor in doctors])
-
-        #print(f"Total points for special samples assignments: {special_samples_points}")
-        tot_spes = sum(special_points)
-        print(f'Total points for special samples assigned: {tot_spes}')
-
-
-
-
-
-
-
-
+        # Print the regular samples and special samples assigned to each doctor and their total points
+        print("Sample Assignments and Points:")
+        for doctor in doctors:
+            assigned_samples = doctor_assignments[doctor] + special_samples_assignments[doctor]
+            assigned_points = sum([points[samples.index(sample)] for sample in doctor_assignments[doctor]]) + sum([spes_points_dic[sample] for sample in special_samples_assignments[doctor]])
+            print(f"{doctor} is assigned samples: {', '.join(assigned_samples)} with a total of {assigned_points} points")
+            list_of_all_points.append(assigned_points)
 
         for max_points, points in zip(max_points_per_doctor, list_of_all_points):
             remaining_points = max(max_points - points, 0)

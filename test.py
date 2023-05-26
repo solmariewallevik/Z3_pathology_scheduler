@@ -81,4 +81,4 @@ for i, day in enumerate(days_week):
     #TODO: add the assigned_points to the max for each doctor.
     for i in range(len(max_points_per_doctor)):
         max_points_per_doctor[i] += assigned_points[i]
-        max_points_per_doctor[i] = min(max_points_per_doctor[i], 30)
+        max_points_per_doctor[i] = min(max_points_per_doctor[i], 30) #TODO: what to do when the routine is different. 
