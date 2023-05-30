@@ -11,10 +11,10 @@ def resource_scheduler(slices, num_doctors, max_points_per_doctor, special_resp_
     special_samples = ['CITO','nålebiopsi','Beinmarg','M-remisse','Oral','PD-11','Hasteprøve', 'ØNH CITO', 'Gastro CITO']
 
     # Create a list of Boolean variables to represent the sickness status of each doctor
-    sick = [Bool(f"is_sick_{i+1}") for i in range(num_doctors)]
+    sick = [Bool(f"is_sick_{i}") for i in range(num_doctors)]
 
-    samples = [f"sample_{i+1}" for i in range(num_samples)] #list of samples
-    doctors = [f"doctor_{i+1}" for i in range(num_doctors)] #list of doctors
+    samples = [f"Sample_{i}" for i in range(num_samples)] #list of samples
+    doctors = [f"Doctor {i}" for i in range(num_doctors)] #list of doctors
 
     # Create a list of decision variables for each doctor
     request_physical_sample = [Bool(f"request_sample_{i}") for i in range(num_doctors)]
@@ -41,7 +41,7 @@ def resource_scheduler(slices, num_doctors, max_points_per_doctor, special_resp_
     # List with names of the special sampels that day
     todays_special_samples = []
     for i in range(num_special_samples):
-        todays_special_samples.append(f'{random.choice(special_samples)}_{i+1}')
+        todays_special_samples.append(f'{random.choice(special_samples)}_{i}')
 
     # List with number of slices per special sample
     todays_special_sample_slices = []
@@ -136,11 +136,6 @@ def resource_scheduler(slices, num_doctors, max_points_per_doctor, special_resp_
                 # Choose a random doctor among the matched doctors for the sample
                 sample_doctor[sample] = random.choice(matched_doctors) # sample y: doctor x
 
-    print(sample_doctor)
-
-    #special_resp = ['CITO', 'ØNH CITO', 'Gastro CITO', 'Lymfom/hema']
-    #special_samples = ['CITO','nålebiopsi','Beinmarg','M-remisse','Oral','PD-11','Hasteprøve', 'ØNH CITO', 'Gastro CITO']
-
     # Create a dictionary that matches the special samples with the doctor with that responsibility    
     spa = special_resp_assignment   
     print(f'todays spes sampels: {todays_special_samples}')
@@ -151,10 +146,17 @@ def resource_scheduler(slices, num_doctors, max_points_per_doctor, special_resp_
             resp_name = resp[0]
             if samp_name == resp_name:
                 matched_resp[doc] = samp_name
-    print(matched_resp)
+    print(f'The matches found: {matched_resp}')
 
     # Create a dictionary that maps each doctor to an integer index
     doctor_indices = {doctor: i for i, doctor in enumerate(doctors_spes.keys())}
+
+    # Create a dictionary that maps each special sample to an integer index
+    spes_sample_index = {
+        'CITO'          : 0,
+        'ØNH CITO'      : 1,
+        'Gastro CITO'   : 2
+        }
 
     # Create a list of Boolean variables to represent the assignments of samples to doctors
     assignments = [[Bool(f'sample_{i}_doctor{j}') for j in range(num_doctors)] for i in range(num_samples)]
@@ -169,15 +171,15 @@ def resource_scheduler(slices, num_doctors, max_points_per_doctor, special_resp_
     # Enable proof generation
     solver.set(unsat_core=True)
 
-    sample_vars = [Int(f'sample_{i}') for i in range(num_samples)]
-    doctor_vars = [Int(f'doctor_{i}') for i in range(num_doctors)]
+    sample_vars = [Int(f'Sample {i}') for i in range(num_samples)]
+    doctor_vars = [Int(f'Doctor {i}') for i in range(num_doctors)]
     special_sample_vars = [Int(f'special_sample{i}') for i in range(num_special_samples)]
 
     extra_points = [Int(f"{doctor}_extra_points") for doctor in doctors]
     for i in range(num_doctors):
         solver.add(extra_points[i] == 0)
     
-    total_points = [Int(f'total_points_{i+1}') for i in range(num_doctors)]
+    total_points = [Int(f'total_points_{i}') for i in range(num_doctors)]
 
     # Store doctors who have earned extra points and the number of extra points they have earned
     fratrekkslisten = {doctor : 0 for doctor in doctors} #maybe this should be stored outside of this function
@@ -231,16 +233,11 @@ def resource_scheduler(slices, num_doctors, max_points_per_doctor, special_resp_
         #solver.add(sample_vars[sample] == list(doctors_spes.keys()).index(doctors))
         solver.add(assignments[sample][doctor_indices[doctor]] == True)
 
-    # Create a dictionary to store the Z3 variables for special sample assignments
-    #special_sample_vars = {sample: [Bool(f"spes_assign_{sample}_{doctor}") for doctor in doctors] for sample in todays_special_samples}
-
-    # Add the constraint that matches the special samples with the doctor who has the same special responsibility
-    #for doc, resp in spa.items():
-        #for i, samp in enumerate(todays_special_samples):
-            #samp_name = samp.rstrip('_1234567890')
-            #for doctor, responsibilities in doctors_spes.items():
-                #if doc == doctor and resp[0] in responsibilities:
-                    #solver.add(special_sample_vars[samp][doctors.index(doctor)])
+    # Add the constraint that enforces the matching of doctors' responsibilities with special samples
+    for doc, resp in matched_resp.items():
+        doctor_index = doctor_indices[doc]
+        sample_indices = spes_sample_index[resp]
+        solver.add(spes_assignments[sample_indices][doctor_index])
 
     # Add the constraint that total points assigned to all doctors must equal the sum of points for all samples
     total_assigned_points = Sum([If(assignments[i][j], points[i], 0) for i in range(num_samples) for j in range(num_doctors)])
@@ -269,7 +266,7 @@ def resource_scheduler(slices, num_doctors, max_points_per_doctor, special_resp_
     for i in range(num_doctors):
         if is_true(sick[i]):
             for i in range(num_doctors):
-                extra_points = Int(f'extra_points_{i+1}')
+                extra_points = Int(f'extra_points_{i}')
                 if doctors[i] in fratrekkslisten:
                     solver.add(extra_points == fratrekkslisten[doctors[i]])
                 else:
@@ -303,7 +300,7 @@ def resource_scheduler(slices, num_doctors, max_points_per_doctor, special_resp_
 
         for i in range(num_doctors):
             if model[request_physical_sample[i]]:
-                print(f"Doctor {i+1} - Request Physical Sample: True")
+                print(f"Doctor {i} - Request Physical Sample: True")
     
         doctor_assignments = {doctor: [] for doctor in doctors}  # initialize dictionary for each doctor's assignments
         special_samples_assignments = {doctor: [] for doctor in doctors}  # initialize dictionary for each doctor's special sample assignments

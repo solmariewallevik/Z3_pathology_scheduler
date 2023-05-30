@@ -6,7 +6,7 @@ import Scheduler.problem_setup
 # One week
 days_week = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
 num_doctors = 8 #number of doctors, think 8 per week is normal
-doctors = [f"doctor_{i+1}" for i in range(num_doctors)] # for the meetings and spes. resp.
+doctors = [f"Doctor {i}" for i in range(num_doctors)] # for the meetings and spes. resp.
 
 max_points_per_doctor = [24 for i in range(num_doctors)]
 
