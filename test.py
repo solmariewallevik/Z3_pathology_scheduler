@@ -74,11 +74,9 @@ for i, day in enumerate(days_week):
     #print(f"Samples for {day}: {slices[i]}")
     print(day)
     # Call task allocation program for current day
-    #Scheduler.problem_setup.resource_scheduler(slices[i], num_doctors, max_points_per_doctor)
     assigned_points = Scheduler.problem_setup.resource_scheduler(slices[i], num_doctors, max_points_per_doctor, special_resp_assignment)
     print(f'Remaining points: {assigned_points}')
     print()
-    #TODO: add the assigned_points to the max for each doctor.
     for i in range(len(max_points_per_doctor)):
         max_points_per_doctor[i] += assigned_points[i]
         max_points_per_doctor[i] = min(max_points_per_doctor[i], 30) #TODO: what to do when the routine is different. 

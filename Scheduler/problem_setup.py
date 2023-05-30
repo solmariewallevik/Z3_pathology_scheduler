@@ -262,6 +262,9 @@ def resource_scheduler(slices, num_doctors, max_points_per_doctor, special_resp_
         if is_true(sick[i]):
             solver.add(Sum([If(assignments[j][j2] and not sick[j2], points[j], 0) for j in range(num_samples) for j2 in range(num_doctors)]) == total_points[i])
 
+    # This doctor is sick
+    #solver.add(sick[1])
+
     # Update fratrekkslisten if doctors work extra
     for i in range(num_doctors):
         if is_true(sick[i]):
@@ -301,6 +304,10 @@ def resource_scheduler(slices, num_doctors, max_points_per_doctor, special_resp_
         for i in range(num_doctors):
             if model[request_physical_sample[i]]:
                 print(f"Doctor {i} - Request Physical Sample: True")
+
+        for i in range(num_doctors):
+            if model[sick[i]]:
+                print(f'Doctor {i} is sick.')
     
         doctor_assignments = {doctor: [] for doctor in doctors}  # initialize dictionary for each doctor's assignments
         special_samples_assignments = {doctor: [] for doctor in doctors}  # initialize dictionary for each doctor's special sample assignments
