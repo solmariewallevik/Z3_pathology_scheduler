@@ -4,28 +4,24 @@ import random
 def resource_scheduler(slices, num_doctors, max_points_per_doctor, special_resp_assignment):
 
     print(f'Max points per doctor:   {max_points_per_doctor}')
-    #print(f'Special responsibilities: {special_resp_assignment}')
 
     num_samples = len(slices) #number of samples
     num_special_samples = 6 
     special_samples = ['CITO','nålebiopsi','Beinmarg','M-remisse','Oral','PD-11','Hasteprøve', 'ØNH CITO', 'Gastro CITO']
-    num_total_samples = num_samples + num_special_samples
 
     samples = [f"Sample_{i}" for i in range(num_samples)] #list of samples
     doctors = [f"Doctor {i}" for i in range(num_doctors)] #list of doctors
 
     doctor_total_times = {doctor: 0 for doctor in doctors} # Track total processing time for each doctor
 
-    # Create a list of Boolean variables to represent the sickness status of each doctor
-    sick = [Bool(f"is_sick_{i}") for i in range(num_doctors)]
+    sick = [Bool(f"is_sick_{i}") for i in range(num_doctors)] # Boolean variables to represent the sickness statur of each doctor
 
-    # Create a list of decision variables for each doctor
-    request_physical_sample = [Bool(f"request_sample_{i}") for i in range(num_doctors)]
+    request_physical_sample = [Bool(f"request_sample_{i}") for i in range(num_doctors)] # Decision variables for each doctor
 
     processing_time = {} # Dictionary for the generated processing times, minutes
     processing_time_special = {} #Dictionary for the generated processing times for special samples, minutes
 
-    start_times = [Int(f"start_{i}") for i in range(num_total_samples)]
+    #start_times = [Int(f"start_{i}") for i in range(num_total_samples)]
 
     #FAGGRUPPER. Each doctor has 1 or 2 (some have 3 and some none).
     spes_table = {
@@ -168,23 +164,20 @@ def resource_scheduler(slices, num_doctors, max_points_per_doctor, special_resp_
     # Assign random time to each sample
     for i, sample in enumerate(samples): 
         if points[samples.index(sample)] in range(0,10):
-            processing_time[sample] = random.randint(1,10)
+            processing_time[sample] = random.randint(5,15)
         elif points[samples.index(sample)] in range(11,30):
-            processing_time[sample] = random.randint(11,30)
+            processing_time[sample] = random.randint(16,40)
         else:
-            processing_time[sample] = random.randint(31,50)
+            processing_time[sample] = random.randint(41,60)
         
-    #list_processing_times = list(processing_time.values())
-
     # Assign random times to each special sample
     for i, sample, in enumerate(todays_special_samples):
         if special_points[todays_special_samples.index(sample)] in range(0,10):
-            processing_time_special[sample] = random.randint(1,10)
-
-        elif special_points[todays_special_samples.index(sample)] in range(11,30):
-            processing_time_special[sample] = random.randint(11,30)
+            processing_time_special[sample] = random.randint(5,15)
+        elif special_points[todays_special_samples.index(sample)] in range(16,30):
+            processing_time_special[sample] = random.randint(16,40)
         else:
-            processing_time_special[sample] = random.randint(31,50)
+            processing_time_special[sample] = random.randint(41,60)
 
     # Create a list of Boolean variables to represent the assignments of samples to doctors
     assignments = [[Bool(f'sample_{i}_doctor{j}') for j in range(num_doctors)] for i in range(num_samples)]
@@ -254,7 +247,6 @@ def resource_scheduler(slices, num_doctors, max_points_per_doctor, special_resp_
 
     # Add the constraint that each tagged sample is assigned to the correct tagged doctor
     for sample, doctor in sample_doctor.items():
-        #solver.add(sample_vars[sample] == list(doctors_spes.keys()).index(doctors))
         solver.add(assignments[sample][doctor_indices[doctor]] == True)
 
     # Add the constraint that enforces the matching of doctors' responsibilities with special samples
@@ -314,7 +306,7 @@ def resource_scheduler(slices, num_doctors, max_points_per_doctor, special_resp_
     #----------------------PHYSICAL SAMPLE------------------------------------#
     # Add constraint: Only some doctors request a physical sample
     solver.add(Or([request_physical_sample[i] for i in range(num_doctors)]))
-    # Doctor 3 and 7 want physical samples as well
+    # Doctor 3 and 7 want physical samples
     solver.add(request_physical_sample[2])
     solver.add(request_physical_sample[6])
 
@@ -373,25 +365,17 @@ def resource_scheduler(slices, num_doctors, max_points_per_doctor, special_resp_
             remaining_points = max(max_points - points, 0)
             points_for_the_next_day.append(remaining_points)
 
-
-
         for j in range(num_doctors):
             doctor_assigned_samples = [model.eval(assignments[i][j]) for i in range(num_samples)]
             total_processing_time = sum(
                 processing_time[samples[i]] for i, assignment in enumerate(doctor_assigned_samples) if assignment
             )
-            #print(f"Total processing time for Doctor {j}: {total_processing_time} minutes.")
-
             doctor_assigned_spes_samp = [model.eval(spes_assignments[i][j]) for i in range(num_special_samples)]
             total_spes_processing_time = sum(
                 processing_time_special[todays_special_samples[i]] for i, spes_assignments in enumerate(doctor_assigned_spes_samp) if spes_assignments
             )
-
             processing_time_in_total = total_processing_time + total_spes_processing_time
-            print(f'Total processing time for Doctor {j}: {processing_time_in_total} minutes')
-
-            #print(f'Total spes processsing time for Doctor {j}: {total_spes_processing_time} minutes.')
-        
+            print(f'Total processing time for Doctor {j}: {processing_time_in_total} minutes')        
 
         return points_for_the_next_day
     

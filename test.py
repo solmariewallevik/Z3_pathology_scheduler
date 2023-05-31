@@ -3,9 +3,10 @@ import random
 import Scheduler.problem_setup
 
 # Set up the problem data
-# One week
-days_week = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
+days_week = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'] # One week
+
 num_doctors = 8 #number of doctors, think 8 per week is normal
+
 doctors = [f"Doctor {i}" for i in range(num_doctors)] # for the meetings and spes. resp.
 
 max_points_per_doctor = [24 for i in range(num_doctors)]
