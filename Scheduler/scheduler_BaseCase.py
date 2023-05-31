@@ -240,6 +240,16 @@ def resource_scheduler(slices, num_doctors):
         max_points_today = max_points_per_doctor + remaining_points[i]
         solver.add(Sum([If(assignments[j][i], points[j], 0) for j in range(num_samples)]) <= max_points_today)
     '''
+
+    # Add constraint to evenly distribute points among doctors
+    #total_ass_points = Sum(total_points)
+
+    # Calculate the average points per doctor
+    #average_points = total_ass_points == Sum(points) // num_doctors
+
+    # Add constraint to ensure each doctor's points are close to the average
+    #for i in range(num_doctors):
+        #solver.add(total_points[i] == average_points)
    
     #---------------------------Check-----------------------------
     # Check if there is a valid solution and print the assignments

@@ -12,8 +12,6 @@ def resource_scheduler(slices, num_doctors, max_points_per_doctor, special_resp_
     samples = [f"Sample_{i}" for i in range(num_samples)] #list of samples
     doctors = [f"Doctor {i}" for i in range(num_doctors)] #list of doctors
 
-    doctor_total_times = {doctor: 0 for doctor in doctors} # Track total processing time for each doctor
-
     sick = [Bool(f"is_sick_{i}") for i in range(num_doctors)] # Boolean variables to represent the sickness statur of each doctor
 
     request_physical_sample = [Bool(f"request_sample_{i}") for i in range(num_doctors)] # Decision variables for each doctor
@@ -195,8 +193,8 @@ def resource_scheduler(slices, num_doctors, max_points_per_doctor, special_resp_
     doctor_vars = [Int(f'Doctor {i}') for i in range(num_doctors)]
     special_sample_vars = [Int(f'special_sample{i}') for i in range(num_special_samples)]
 
-    extra_points = [Int(f"{doctor}_extra_points") for doctor in doctors]
     total_points = [Int(f'total_points_{i}') for i in range(num_doctors)]
+    extra_points = [Int(f"{doctor}_extra_points") for doctor in doctors]
 
     # Store doctors who have earned extra points and the number of extra points they have earned
     fratrekkslisten = {doctor : 0 for doctor in doctors} #maybe this should be stored outside of this function
@@ -219,11 +217,10 @@ def resource_scheduler(slices, num_doctors, max_points_per_doctor, special_resp_
         solver.add(sum([If(spes_assignments[i][j], 1, 0) for j in range(num_doctors)]) <= 1)
 
     for j in range(num_doctors):
-        # Calculate total assigned points for regular samples
-        tap_regular = sum([If(assignments[i][j], points[i], 0) for i in range(num_samples)]) # Assuming 'points' is a list containing the number of points for each sample
-        # Calculate total assigned points for special samples
-        tap_special = sum([If(spes_assignments[k][j], special_points[k], 0) for k in range(num_special_samples)]) # Assuming 'special_points' is a list containing the number of points for each special sample
-    
+        # Calculate total assigned points for sampels (regular and special)
+        tap_regular = sum([If(assignments[i][j], points[i], 0) for i in range(num_samples)]) 
+        tap_special = sum([If(spes_assignments[k][j], special_points[k], 0) for k in range(num_special_samples)])
+        
         # Enforce the constraint that total assigned points (regular + special) for each doctor does not exceed max_points_per_doctor
         solver.add(tap_regular + tap_special <= max_points_per_doctor[j])
 
@@ -264,26 +261,28 @@ def resource_scheduler(slices, num_doctors, max_points_per_doctor, special_resp_
     solver.add(total_ass_special_points == Sum(special_points))
      
     #------------------------------- SICK ------------------------------#
+    # This doctor is sick
+    #solver.add(sick[1])
+
     # Add a constraint that if a doctor is sick, they cannot be assigned any samples or points
     for i in range(num_samples):
         for j in range(num_doctors):
             solver.add(Implies(sick[j], Not(assignments[i][j])))
 
-    for i in range(num_special_sampels):
+    for i in range(num_special_samples):
         for j in range(num_doctors):
             solver.add(Implies(sick[j], Not(spes_assignments[i][j])))
 
     # Add constraint that calculates the total points earned by each doctor based on a set of assignments for samples
     for i in range(num_doctors):
         solver.add(Sum([If(assignments[j][i], points[j], 0) for j in range(num_samples)]) + total_points[i] <= max_points_per_doctor[i])
+        solver.add(Sum([If(spes_assignments[j][i], special_points[j], 0) for j in range(num_special_samples)]) + total_points[i] <= max_points_per_doctor[i])
 
     # Add constraint to redistribute points of sick doctor to others
     for i in range(num_doctors):
         if is_true(sick[i]):
             solver.add(Sum([If(assignments[j][j2] and not sick[j2], points[j], 0) for j in range(num_samples) for j2 in range(num_doctors)]) == total_points[i])
-
-    # This doctor is sick
-    #solver.add(sick[1])
+            solver.add(Sum([If(spes_assignments[j][j2] and not sick[j2], special_points[j], 0) for j in range(num_special_sampels) for j2 in range(num_doctors)]) == total_points[i])
 
     # Update fratrekkslisten if doctors work extra
     for i in range(num_doctors):
@@ -297,15 +296,25 @@ def resource_scheduler(slices, num_doctors, max_points_per_doctor, special_resp_
                 solver.add(total_points[i] == Sum([If(assignments[j][i], points[j], 0) for j in range(num_samples)]) + extra_points)
 
     #-----------------------EVEN DISTRIBUTION---------------------------#
-    # Add constraint to evenly distribute points among doctors
-    total_ass_points = Sum(total_points)
+
+    doctor_assignments = {doctor: [] for doctor in doctors}  # initialize dictionary for each doctor's assignments
+    special_samples_assignments = {doctor: [] for doctor in doctors}
+    assigned_points = {doctor: [] for doctor in doctors}  # initialize dictionary for each doctor's assigned points
+
+    # Calculate the total points assigned to each doctor
+    total_points = [Sum([points[samples.index(sample)] for sample in doctor_assignments[doctor]]) +
+                   Sum([spes_points_dic[sample] for sample in special_samples_assignments[doctor]])
+                   for doctor in doctors]
 
     # Calculate the average points per doctor
-    average_points = total_ass_points == Sum(points) // num_doctors
+    average_points = Sum(total_points) // num_doctors
 
     # Add constraint to ensure each doctor's points are close to the average
-    for i in range(num_doctors):
-        solver.add(total_points[i] == average_points)
+    for doctor in doctors:
+        doctor_samples = doctor_assignments[doctor] + special_samples_assignments[doctor]
+        assigned_points[doctor] = [points[samples.index(sample)] for sample in doctor_samples]
+
+        solver.add(Sum(assigned_points[doctor]) == average_points)
 
     #----------------------PHYSICAL SAMPLE------------------------------------#
     # Add constraint: Only some doctors request a physical sample
@@ -317,10 +326,10 @@ def resource_scheduler(slices, num_doctors, max_points_per_doctor, special_resp_
     #-----------------------TIME-----------------------------#
     # Add constraint: Sum of processing times for each doctor's assigned samples (regular and special) should not exceed 400
     for j in range(num_doctors):
-        doctor_assigned_samples = [If(assignments[i][j], processing_time.get(i, 0), 0) for i in range(num_samples)]
+        doctor_assigned_samples = [If(assignments[i][j], processing_time.get(i, 0), 0) for i in range(num_samples)] #regular samples
         total_processing_time = Sum(doctor_assigned_samples)
 
-        doctor_assigned_spes_samp = [If(spes_assignments[i][j], processing_time_special.get(i,0), 0) for i in range(num_special_samples)]
+        doctor_assigned_spes_samp = [If(spes_assignments[i][j], processing_time_special.get(i,0), 0) for i in range(num_special_samples)] #special samples
         total_spes_processing_time = Sum(doctor_assigned_spes_samp)
 
         solver.add(total_processing_time + total_spes_processing_time <= 400) # 400 minutes is one work day, 7 hours.
@@ -379,7 +388,7 @@ def resource_scheduler(slices, num_doctors, max_points_per_doctor, special_resp_
                 processing_time_special[todays_special_samples[i]] for i, spes_assignments in enumerate(doctor_assigned_spes_samp) if spes_assignments
             )
             processing_time_in_total = total_processing_time + total_spes_processing_time
-            print(f'Total processing time for Doctor {j}: {processing_time_in_total} minutes')        
+            print(f'Total processing time for Doctor {j}: {processing_time_in_total} minutes')          
 
         return points_for_the_next_day
     
