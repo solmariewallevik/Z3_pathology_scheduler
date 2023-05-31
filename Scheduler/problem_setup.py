@@ -177,10 +177,11 @@ def resource_scheduler(slices, num_doctors, max_points_per_doctor, special_resp_
     #list_processing_times = list(processing_time.values())
 
     # Assign random times to each special sample
-    for i, sample, in enumerate(special_samples):
-        if special_points[special_samples.index(sample)] in range(0,10):
+    for i, sample, in enumerate(todays_special_samples):
+        if special_points[todays_special_samples.index(sample)] in range(0,10):
             processing_time_special[sample] = random.randint(1,10)
-        elif special_points[special_samples.index(sample)] in range(11,30):
+
+        elif special_points[todays_special_samples.index(sample)] in range(11,30):
             processing_time_special[sample] = random.randint(11,30)
         else:
             processing_time_special[sample] = random.randint(31,50)
@@ -318,22 +319,15 @@ def resource_scheduler(slices, num_doctors, max_points_per_doctor, special_resp_
     solver.add(request_physical_sample[6])
 
     #-----------------------TIME-----------------------------#
-    # Add constraint: Sum of processing times for each doctor's assigned samples should not exceed 400
+    # Add constraint: Sum of processing times for each doctor's assigned samples (regular and special) should not exceed 400
     for j in range(num_doctors):
         doctor_assigned_samples = [If(assignments[i][j], processing_time.get(i, 0), 0) for i in range(num_samples)]
-        # Use Sum function to calculate the total processing time for the current doctor's assigned samples
         total_processing_time = Sum(doctor_assigned_samples)
-        # Add constraint that restricts the total processing time to be less than or equal to 400
-        solver.add(total_processing_time <= 400)
 
-
-    for j in range(num_doctors):
-        doctor_assigned_spes_samp = [If(spes_assignments[i][j], processing_time_special.get(i,0), 0) for i in range(num_special_sampels)]
+        doctor_assigned_spes_samp = [If(spes_assignments[i][j], processing_time_special.get(i,0), 0) for i in range(num_special_samples)]
         total_spes_processing_time = Sum(doctor_assigned_spes_samp)
-        solver.add(total_spes_processing_time <= 400)
 
-    print(f'Processing times: {processing_time}')
-    print(f'Special processing time: {processing_time_special}')
+        solver.add(total_processing_time + total_spes_processing_time <= 400) # 400 minutes is one work day, 7 hours.
 
     #---------------------------Check-----------------------------
     # Check if there is a valid solution and print the assignments
@@ -379,19 +373,24 @@ def resource_scheduler(slices, num_doctors, max_points_per_doctor, special_resp_
             remaining_points = max(max_points - points, 0)
             points_for_the_next_day.append(remaining_points)
 
+
+
         for j in range(num_doctors):
             doctor_assigned_samples = [model.eval(assignments[i][j]) for i in range(num_samples)]
             total_processing_time = sum(
                 processing_time[samples[i]] for i, assignment in enumerate(doctor_assigned_samples) if assignment
             )
-            print(f"Total processing time for Doctor {j}: {total_processing_time} minutes.")
+            #print(f"Total processing time for Doctor {j}: {total_processing_time} minutes.")
 
-        for j in range(num_doctors):
             doctor_assigned_spes_samp = [model.eval(spes_assignments[i][j]) for i in range(num_special_samples)]
             total_spes_processing_time = sum(
-                processing_time_special[special_samples[i]] for i, spes_assignment in enumerate(doctor_assigned_spes_samp) if assignment
+                processing_time_special[todays_special_samples[i]] for i, spes_assignments in enumerate(doctor_assigned_spes_samp) if spes_assignments
             )
-            print(f'Total spes processsing time for Doctor {j}: {total_spes_processing_time} minutes.')
+
+            processing_time_in_total = total_processing_time + total_spes_processing_time
+            print(f'Total processing time for Doctor {j}: {processing_time_in_total} minutes')
+
+            #print(f'Total spes processsing time for Doctor {j}: {total_spes_processing_time} minutes.')
         
 
         return points_for_the_next_day
