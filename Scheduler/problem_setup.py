@@ -7,7 +7,7 @@ def resource_scheduler(slices, num_doctors, max_points_per_doctor, special_resp_
 
     num_samples = len(slices) #number of samples
     num_special_samples = 6 
-    special_samples = ['CITO','nålebiopsi','Beinmarg','M-remisse','Oral','PD-11','Hasteprøve', 'ØNH CITO', 'Gastro CITO']
+    special_samples = ['CITO','nålebiopsi','Beinmarg','M-remisse','Oral','PD-11', 'ØNH CITO', 'Gastro CITO'] # CITO = Hasteprøve
 
     samples = [f"Sample_{i}" for i in range(num_samples)] #list of samples
     doctors = [f"Doctor {i}" for i in range(num_doctors)] #list of doctors
@@ -269,6 +269,10 @@ def resource_scheduler(slices, num_doctors, max_points_per_doctor, special_resp_
         for j in range(num_doctors):
             solver.add(Implies(sick[j], Not(assignments[i][j])))
 
+    for i in range(num_special_sampels):
+        for j in range(num_doctors):
+            solver.add(Implies(sick[j], Not(spes_assignments[i][j])))
+
     # Add constraint that calculates the total points earned by each doctor based on a set of assignments for samples
     for i in range(num_doctors):
         solver.add(Sum([If(assignments[j][i], points[j], 0) for j in range(num_samples)]) + total_points[i] <= max_points_per_doctor[i])
@@ -292,7 +296,7 @@ def resource_scheduler(slices, num_doctors, max_points_per_doctor, special_resp_
                     solver.add(extra_points == 0)
                 solver.add(total_points[i] == Sum([If(assignments[j][i], points[j], 0) for j in range(num_samples)]) + extra_points)
 
-    #-----------------------EVEN DIST---------------------------#
+    #-----------------------EVEN DISTRIBUTION---------------------------#
     # Add constraint to evenly distribute points among doctors
     total_ass_points = Sum(total_points)
 
