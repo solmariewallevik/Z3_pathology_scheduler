@@ -12,9 +12,7 @@ def resource_scheduler(slices, num_doctors, max_points_per_doctor, special_resp_
     samples = [f"Sample_{i}" for i in range(num_samples)] #list of samples
     doctors = [f"Doctor {i}" for i in range(num_doctors)] #list of doctors
 
-    #sick = [Bool(f"is_sick_{i}") for i in range(num_doctors)] # Boolean variables to represent the sickness statur of each doctor
-
-    sick = [False for i in range(num_doctors)]
+    sick = [False for i in range(num_doctors)] # Boolean representation of wealness status
 
     request_physical_sample = [Bool(f"request_sample_{i}") for i in range(num_doctors)] # Decision variables for each doctor
 
@@ -170,7 +168,7 @@ def resource_scheduler(slices, num_doctors, max_points_per_doctor, special_resp_
         else:
             processing_time[sample] = random.randint(41,60)
         
-    # Assign random times to each special sample
+    # Assign random times to each special samples
     for i, sample, in enumerate(todays_special_samples):
         if special_points[todays_special_samples.index(sample)] in range(0,10):
             processing_time_special[sample] = random.randint(5,15)
@@ -196,10 +194,6 @@ def resource_scheduler(slices, num_doctors, max_points_per_doctor, special_resp_
     special_sample_vars = [Int(f'special_sample{i}') for i in range(num_special_samples)]
 
     total_points = [Int(f'total_points_{i}') for i in range(num_doctors)]
-    extra_points = [Int(f"{doctor}_extra_points") for doctor in doctors]
-
-    
-    print(f'Deductionlist: {deductionlist}')
 
     #----------------------Constraints, Base Case -------------------------
     # Add constraints to ensure each sample is assigned to exactly one doctor
@@ -264,14 +258,14 @@ def resource_scheduler(slices, num_doctors, max_points_per_doctor, special_resp_
      
     #------------------------------- SICK ------------------------------#
     # This doctor is sick
-    sick[1] = True
+    # sick[1] = True
 
     # Add a constraint that if a doctor is sick, they cannot be assigned any samples or points
     for i in range(num_samples):
         for j in range(num_doctors):
             solver.add(Implies(sick[j], Not(assignments[i][j])))
 
-    # Add a constraint that if a doctor is sick, they cannot be assigned any samples or points
+    # Add a constraint that if a doctor is sick, they cannot be assigned any special samples or points
     for i in range(num_special_samples):
         for j in range(num_doctors):
             solver.add(Implies(sick[j], Not(spes_assignments[i][j])))
@@ -333,8 +327,7 @@ def resource_scheduler(slices, num_doctors, max_points_per_doctor, special_resp_
             elif sick[i] == False:
                 max_points_per_doctor[i] = 30
 
-        print(f'new max points: {max_points_per_doctor}')
-            
+        print(f'New max points per doctor: {max_points_per_doctor}')
     
         doctor_assignments = {doctor: [] for doctor in doctors}  # initialize dictionary for each doctor's assignments
         special_samples_assignments = {doctor: [] for doctor in doctors}  # initialize dictionary for each doctor's special sample assignments
@@ -361,6 +354,7 @@ def resource_scheduler(slices, num_doctors, max_points_per_doctor, special_resp_
             if True in sick:
                 if assigned_points > 24:
                     deductionlist[doctor] = 30-assigned_points
+            print(f'Deductionlist: {deductionlist}')
             print(f"{doctor} is assigned samples: {', '.join(assigned_samples)} with a total of {assigned_points} points")
             list_of_all_points.append(assigned_points)
 
@@ -379,6 +373,7 @@ def resource_scheduler(slices, num_doctors, max_points_per_doctor, special_resp_
             )
             processing_time_in_total = total_processing_time + total_spes_processing_time
             print(f'Total processing time for Doctor {j}: {processing_time_in_total} minutes') 
+
         return points_for_the_next_day
     
     else:

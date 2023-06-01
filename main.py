@@ -105,7 +105,7 @@ for i, day in enumerate(days_week):
                                                                  max_points_per_doctor, special_resp_assignment, deductionlist)
     print(f'Remaining points: {assigned_points}')
     print()
-    #unassigned_samples = [sample for sample in slices[i] if sample not in assigned_points]
+    unassigned_samples = [sample for sample in slices[i] if sample not in assigned_points]
 
     # the amount of points per doctors that will be their max for the next day
     for i in range(len(max_points_per_doctor)):

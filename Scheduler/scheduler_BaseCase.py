@@ -190,20 +190,32 @@ def resource_scheduler(slices, num_doctors):
 
     #-------------------------------Works ^ ------------------------------#
 
-    # Should this be here???????????????
+    # Add a constraint that if a doctor is sick, they cannot be assigned any samples or points
+    for i in range(num_samples):
+        for j in range(num_doctors):
+            solver.add(Implies(sick[j], Not(assignments[i][j])))
+
+    for i in range(num_special_sampels):
+        for j in range(num_doctors):
+            solver.add(Implies(sick[j], Not(spes_assignments[i][j])))
+
+    # Add constraint that calculates the total points earned by each doctor based on a set of assignments for samples
     for i in range(num_doctors):
-        solver.add(Sum([If(assignments[j][i], points[j], 0) for j in range(num_samples)]) + total_points[i] <= max_points_per_doctor)
+        solver.add(Sum([If(assignments[j][i], points[j], 0) for j in range(num_samples)]) + total_points[i] <= max_points_per_doctor[i])
 
     # Add constraint to redistribute points of sick doctor to others
     for i in range(num_doctors):
         if is_true(sick[i]):
             solver.add(Sum([If(assignments[j][j2] and not sick[j2], points[j], 0) for j in range(num_samples) for j2 in range(num_doctors)]) == total_points[i])
 
+    # This doctor is sick
+    #solver.add(sick[1])
+
     # Update fratrekkslisten if doctors work extra
     for i in range(num_doctors):
         if is_true(sick[i]):
             for i in range(num_doctors):
-                extra_points = Int(f'extra_points_{i+1}')
+                extra_points = Int(f'extra_points_{i}')
                 if doctors[i] in fratrekkslisten:
                     solver.add(extra_points == fratrekkslisten[doctors[i]])
                 else:
