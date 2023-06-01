@@ -1,32 +1,23 @@
-import random
-import problem_setup 
-import scheduler_BaseCase
+# Add constraints to ensure each sample is assigned to exactly one doctor
+for i in range(num_samples):
+    solver.add(Or([assignments[i][j] for j in range(num_doctors)])) #Maybe not
+    
+# Add constraint to ensure each special sample is assigned to exactly one doctor
+for i in range(num_special_samples):
+    solver.add(Or([spes_assignments[i][j] for j in range(num_doctors)]))
 
-spes_table = {
-    'u': 'Uro-group',
-    'x': 'Gyno-group',
-    'p': 'Perinatal-group',
-    'm': 'Mom-group',
-    'g': 'Gastro-group',
-    'h': 'Skin-group',
-    'l': 'Lymfoma-group',
-    's': 'Sarkoma-group',
-    'r': 'ear-nose-thought-group',
-    'y': 'Kidney-group',
-    'oral': 'oral',
-    'nevro': 'nevro'
-    }
+# Add constraints to ensure each sample is assigned to at most one doctor
+for i in range(num_samples):
+    solver.add(sum([If(assignments[i][j], 1,0) for j in range(num_doctors)]) <= 1)
 
-def generate_doctors_spes():
-    path_groups_doc = list(spes_table.keys())
-    random.shuffle(path_groups_doc)
+# Add constraint to ensure each special sample is assigned to at most one doctor
+for i in range(num_special_samples):
+    solver.add(sum([If(spes_assignments[i][j], 1, 0) for j in range(num_doctors)]) <= 1)
 
-    doctors_spes = {}
-    for doctor in doctors: 
-        num_keys = random.randint(1,2)
-        doctors_spes[doctor] = {}
-        for i in range(num_keys):
-            key = path_groups_doc.pop(0)
-            doctors_spes[doctor][key] = spes_table[key]
+# Add the constraint that each sample is assigned to one doctor
+for sample in range(num_samples):
+    solver.add(And(sample_vars[sample] >= 0, sample_vars[sample] < num_doctors))
 
-    return doctors_spes
+#Add the constraint that each special sample is assigned to one doctor
+for sample in range(num_special_samples):
+    solver.add(And(special_sample_vars[sample] >= 0, special_sample_vars[sample] < num_doctors))

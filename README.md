@@ -6,3 +6,5 @@ Hopefully improving their workflow overall.
 
 The plan is to create the base case and gradually add more constraints to reach the end product!
 One thing that is missing for the base case to be finished is to match each tagged sample with a doctor with the same tag. 
+
+Most of the z3 logic is in problem_setup.py and main.py contains the simulation of a week and it is were the code needs to be run from. 
