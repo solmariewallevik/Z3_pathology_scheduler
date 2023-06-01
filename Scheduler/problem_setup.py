@@ -12,7 +12,9 @@ def resource_scheduler(slices, num_doctors, max_points_per_doctor, special_resp_
     samples = [f"Sample_{i}" for i in range(num_samples)] #list of samples
     doctors = [f"Doctor {i}" for i in range(num_doctors)] #list of doctors
 
-    sick = [Bool(f"is_sick_{i}") for i in range(num_doctors)] # Boolean variables to represent the sickness statur of each doctor
+    #sick = [Bool(f"is_sick_{i}") for i in range(num_doctors)] # Boolean variables to represent the sickness statur of each doctor
+
+    sick = [False for i in range(num_doctors)]
 
     request_physical_sample = [Bool(f"request_sample_{i}") for i in range(num_doctors)] # Decision variables for each doctor
 
@@ -262,28 +264,17 @@ def resource_scheduler(slices, num_doctors, max_points_per_doctor, special_resp_
      
     #------------------------------- SICK ------------------------------#
     # This doctor is sick
-    solver.add(sick[1])
+    sick[1] = True
 
-    # Each doctor can be either working or sick
-    for d in doctors:
-        Or(d == True, d == False)
+    # Add a constraint that if a doctor is sick, they cannot be assigned any samples or points
+    for i in range(num_samples):
+        for j in range(num_doctors):
+            solver.add(Implies(sick[j], Not(assignments[i][j])))
 
-    # If a doctor is sick, they should not be assigned any samples
-    for d, s in zip(doctors, samples):
-        for is_sick in sick:
-            Implies(And(d == False, is_sick), s == False)
-
-    # If a doctor is sick, their intended 24 points should be distributed among the other working doctors
-    for d1, p1, s1 in zip(doctors, points, sick):
-        if is_true(s1):
-            sick_doctor_points = 24
-            working_doctors = [d2 for d2 in doctors if d2 != d1 and d2 == True]
-            num_working_doctors = len(working_doctors)
-            for d2 in working_doctors:
-                ps = Int(f'points_{d2}')
-                solver.add(p2 >= 0)
-                solver.add(p2 <= sick_doctor_points)
-                sick_doctors_points -= p2
+    # Add a constraint that if a doctor is sick, they cannot be assigned any samples or points
+    for i in range(num_special_samples):
+        for j in range(num_doctors):
+            solver.add(Implies(sick[j], Not(spes_assignments[i][j])))
 
     #-----------------------EVEN DISTRIBUTION---------------------------#
 
@@ -335,9 +326,15 @@ def resource_scheduler(slices, num_doctors, max_points_per_doctor, special_resp_
             if model[request_physical_sample[i]]:
                 print(f"Doctor {i} - Request Physical Sample: True")
 
-        for i in range(num_doctors):
-            if model[sick[i]]:
-                print(f'Doctor {i} is sick.')
+        for i in range(len(sick)):
+            if sick[i]:
+                max_points_per_doctor[i] = 0
+                print(f'Doctor {i} is sick')
+            elif sick[i] == False:
+                max_points_per_doctor[i] = 30
+
+        print(f'new max points: {max_points_per_doctor}')
+            
     
         doctor_assignments = {doctor: [] for doctor in doctors}  # initialize dictionary for each doctor's assignments
         special_samples_assignments = {doctor: [] for doctor in doctors}  # initialize dictionary for each doctor's special sample assignments
@@ -361,6 +358,9 @@ def resource_scheduler(slices, num_doctors, max_points_per_doctor, special_resp_
         for doctor in doctors:
             assigned_samples = doctor_assignments[doctor] + special_samples_assignments[doctor]
             assigned_points = sum([points[samples.index(sample)] for sample in doctor_assignments[doctor]]) + sum([spes_points_dic[sample] for sample in special_samples_assignments[doctor]])
+            if True in sick:
+                if assigned_points > 24:
+                    deductionlist[doctor] = 30-assigned_points
             print(f"{doctor} is assigned samples: {', '.join(assigned_samples)} with a total of {assigned_points} points")
             list_of_all_points.append(assigned_points)
 
@@ -379,15 +379,6 @@ def resource_scheduler(slices, num_doctors, max_points_per_doctor, special_resp_
             )
             processing_time_in_total = total_processing_time + total_spes_processing_time
             print(f'Total processing time for Doctor {j}: {processing_time_in_total} minutes') 
-        for d in doctors:
-            print(f"Doctor {d}: {model[d]}")
-
-        for s in samples:
-            print(f"Sample {s}: {model[s]}")
-
-        for p in points:
-            print(f"Points {p}: {model[p].as_long()}")
-
         return points_for_the_next_day
     
     else:
