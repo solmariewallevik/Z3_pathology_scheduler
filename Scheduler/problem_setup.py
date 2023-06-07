@@ -375,19 +375,24 @@ def resource_scheduler(slices, num_doctors, max_points_per_doctor, special_resp_
             print(f"{doctor} is assigned samples: {', '.join(assigned_samples)} with a total of {assigned_points} points")
             list_of_all_points.append(assigned_points)
 
-        #The Unassigned samples
+        #The unassigned samples
         not_analyzed_next_day = []
-        print('Unanalyzed_samples:')
         for sample in not_analyzed:
             if is_true(model.evaluate(sample)):
-                print(sample)
                 not_analyzed_next_day.append(sample)
 
+        not_analyzed_dict = {}
+        for condition in not_analyzed_next_day:
+            sample_name = condition.split('(')[1].split('_')[0]
+            not_analyzed_dict[sample_name] = condition
+
         not_analyzed_samples = []
-        for i in range(num_samples):
-            if is_true(not_analyzed[i]):
-                not_analyzed_samples.append(samples[i])
-        print(not_analyzed_samples)
+        not_analyzed_slices = []
+        for sample in samples:
+            if sample in not_analyzed_dict:
+                not_analyzed_samples.append(sample)
+                not_analyzed_slices.append(slices[samples.index(sample)])
+        print(f'Samples not analyzed today: {not_analyzed_samples}') #The samples sent to the next day
 
         #Calculate points for the next day
         for max_points, points in zip(max_points_per_doctor, list_of_all_points):
@@ -408,7 +413,7 @@ def resource_scheduler(slices, num_doctors, max_points_per_doctor, special_resp_
             processing_time_in_total = total_processing_time + total_spes_processing_time
             print(f'Total processing time for Doctor {j}: {processing_time_in_total} minutes') 
 
-        return points_for_the_next_day, not_analyzed_next_day
+        return points_for_the_next_day, not_analyzed_slices
     
     else:
         print("No valid assignment found.")

@@ -1,23 +1,29 @@
-# Add constraints to ensure each sample is assigned to exactly one doctor
-for i in range(num_samples):
-    solver.add(Or([assignments[i][j] for j in range(num_doctors)])) #Maybe not
-    
-# Add constraint to ensure each special sample is assigned to exactly one doctor
-for i in range(num_special_samples):
-    solver.add(Or([spes_assignments[i][j] for j in range(num_doctors)]))
+not_analyzed = ['Not(Sample2_analyzed)', 'Not(Sample4_analyzed)']
+samples = ['Sample1', 'Sample2', 'Sample3', 'Sample4', 'Sample5', 'Sample6']
+num_samples = 6
 
-# Add constraints to ensure each sample is assigned to at most one doctor
-for i in range(num_samples):
-    solver.add(sum([If(assignments[i][j], 1,0) for j in range(num_doctors)]) <= 1)
+slices = [1,2,3,4,5,6]
 
-# Add constraint to ensure each special sample is assigned to at most one doctor
-for i in range(num_special_samples):
-    solver.add(sum([If(spes_assignments[i][j], 1, 0) for j in range(num_doctors)]) <= 1)
 
-# Add the constraint that each sample is assigned to one doctor
-for sample in range(num_samples):
-    solver.add(And(sample_vars[sample] >= 0, sample_vars[sample] < num_doctors))
+not_analyzed_dict = {}
+for condition in not_analyzed:
+    sample_name = condition.split('(')[1].split('_')[0]
+    not_analyzed_dict[sample_name] = condition
+print(not_analyzed_dict)
 
-#Add the constraint that each special sample is assigned to one doctor
-for sample in range(num_special_samples):
-    solver.add(And(special_sample_vars[sample] >= 0, special_sample_vars[sample] < num_doctors))
+not_analyzed_samples = []
+not_analyzed_slices = []
+for sample in samples:
+    if sample in not_analyzed_dict:
+        not_analyzed_samples.append(sample)
+        not_analyzed_slices.append(slices[samples.index(sample)])
+
+print(not_analyzed_samples)
+print(not_analyzed_slices)
+
+
+un = [1,2]
+
+un.extend(not_analyzed_slices)
+
+print(un)

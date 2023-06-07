@@ -80,7 +80,7 @@ print()
 # Generate list of random amount of slices
 def simulate_slices():
     slices = []
-    for i in range(1,100):
+    for i in range(1,50):
         n = random.randint(1,10)
         slices.append(n)
     return slices
@@ -97,7 +97,7 @@ slices = slices_week(days_week)
 
 # Simulate a week of assignments
 for i, day in enumerate(days_week):
-    print(f"Samples for {day}: {slices[i]}")
+    print(f"Number of samples for {day}: {len(slices[i]) samples}")
     print(day)
     
     # Call task allocation program for current day
@@ -105,10 +105,9 @@ for i, day in enumerate(days_week):
                                                                  max_points_per_doctor, special_resp_assignment, deductionlist)
     assigned_points = problem[0]
     un_analyzed = problem[1]
-    print(un_analyzed)
 
-    #for un in range(len(un_analyzed)):
-        #slices.append(un_analyzed[un])
+    # Add the not analyzed samples to the list of slices for the next day
+    slices.extend(un_analyzed)
 
     print(f'Remaining points: {assigned_points}')
     print()
