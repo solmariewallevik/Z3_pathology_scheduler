@@ -20,7 +20,6 @@ def resource_scheduler(slices, num_doctors, max_points_per_doctor, special_resp_
     processing_time_special = {} #Dictionary for the generated processing times for special samples, minutes
 
     analyzed = [Bool(f"is_analyzed_{i}") for i in range(num_samples)] # Boolean representation of if a sample has been analyzed
-    # True = analyzed, False = not analyzed
 
     not_analyzed = [] # list with all the samples that have not been analyzed
 
@@ -275,7 +274,7 @@ def resource_scheduler(slices, num_doctors, max_points_per_doctor, special_resp_
      
     #------------------------------- SICK ------------------------------#
     # This doctor is sick
-    # sick[1] = True
+    sick[1] = True
 
     # Add a constraint that if a doctor is sick, they cannot be assigned any samples or points
     for i in range(num_samples):
@@ -337,12 +336,18 @@ def resource_scheduler(slices, num_doctors, max_points_per_doctor, special_resp_
             if model[request_physical_sample[i]]:
                 print(f"Doctor {i} - Request Physical Sample: True")
 
+        current_pt = list(deductionlist.values())
+        current_doctor = list(deductionlist.keys())
         for i in range(len(sick)):
             if sick[i]:
                 max_points_per_doctor[i] = 0
                 print(f'Doctor {i} is sick')
+                deductionlist[f'Doctor {i}'] = current_pt[i]-24
             elif sick[i] == False:
                 max_points_per_doctor[i] = 30
+
+        if True in sick:
+            print(f'Deductionlist: {deductionlist}')
 
         print(f'New max points per doctor: {max_points_per_doctor}')
     
@@ -368,10 +373,12 @@ def resource_scheduler(slices, num_doctors, max_points_per_doctor, special_resp_
         for doctor in doctors:
             assigned_samples = doctor_assignments[doctor] + special_samples_assignments[doctor]
             assigned_points = sum([points[samples.index(sample)] for sample in doctor_assignments[doctor]]) + sum([spes_points_dic[sample] for sample in special_samples_assignments[doctor]])
+
             if True in sick:
+                # check their previous points 
                 if assigned_points > 24:
                     deductionlist[doctor] = 30-assigned_points
-            #print(f'Deductionlist: {deductionlist}')
+
             print(f"{doctor} is assigned samples: {', '.join(assigned_samples)} with a total of {assigned_points} points")
             list_of_all_points.append(assigned_points)
 

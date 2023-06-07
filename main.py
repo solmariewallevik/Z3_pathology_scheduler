@@ -80,7 +80,7 @@ print()
 # Generate list of random amount of slices
 def simulate_slices():
     slices = []
-    for i in range(1,50):
+    for i in range(1,25):
         n = random.randint(1,10)
         slices.append(n)
     return slices
@@ -97,7 +97,8 @@ slices = slices_week(days_week)
 
 # Simulate a week of assignments
 for i, day in enumerate(days_week):
-    print(f"Number of samples for {day}: {len(slices[i]) samples}")
+    num_samp_day = len(slices[i])
+    print(f"Number of samples for {day}: {num_samp_day} samples")
     print(day)
     
     # Call task allocation program for current day
