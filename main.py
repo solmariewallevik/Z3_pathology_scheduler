@@ -5,18 +5,17 @@ import Scheduler.problem_setup
 # Set up the problem data
 days_week = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'] # One week
 
-num_doctors = 10 # number of doctors working that week
+num_doctors = 21 # number of doctors working that week
 
 doctors = [f"Doctor {i}" for i in range(num_doctors)] # for the meetings and spes. resp.
 
 unassigned_samples = []
 
-max_points_per_doctor = [24 for i in range(num_doctors)]
+max_points_per_doctor = [100 for i in range(num_doctors)]
 
 doc_routine = ['full_time' for i in range(num_doctors)]
-doc_routine[5] = '1/2'
-doc_routine[6] = '1/3'
-#doc_routine[7] = '1/2'
+#doc_routine[12] = '1/2'
+#doc_routine[17] = '1/2'
 #doc_routine[8] = '1/2'
 #doc_routine[9] = '1/2'
 #doc_routine[10] = '1/2'
@@ -27,13 +26,15 @@ doc_routine[6] = '1/3'
 #doc_routine[15] = '1/2'
 #doc_routine[16] = '1/2'
 
-#doc_routine[17] = '1/3'
+#doc_routine[6] = '1/3'
+#doc_routine[10] = '1/3'
+#doc_routine[11] = '1/3'
+#doc_routine[13] = '1/3'
+#doc_routine[14] = '1/3'
+#doc_routine[15] = '1/3'
+#doc_routine[16] = '1/3'
 #doc_routine[18] = '1/3'
 #doc_routine[19] = '1/3'
-#doc_routine[20] = '1/3'
-#doc_routine[21] = '1/3'
-#doc_routine[22] = '1/3'
-#doc_routine[23] = '1/3'
 
 # Store doctors who have earned extra points and the number of extra points they have earned
 #Fratrekkslisten
@@ -44,7 +45,7 @@ for i in range(len(doc_routine)):
     if doc_routine[i] == 'full_time':
         max_points_per_doctor[i] = 24
     elif doc_routine[i] == '1/2':
-        max_points_per_doctor[i] = 11 #or max_points_per_doctor[i] = 12
+        max_points_per_doctor[i] = 12 
     elif doc_routine[i] == '1/3':
         max_points_per_doctor[i] = 8
 
@@ -60,7 +61,7 @@ for meeting in meetings:
         meeting_assignment.setdefault(doctor, []).append(meeting)
 
 #The special areas of responsibility for the week
-special_resp = ['CITO', 'ØNH CITO', 'Gastro CITO', 'Lymfom/hema']
+special_resp = ['CITO', 'ØNH CITO', 'Gastro CITO', 'Lymfom/hema', 'nålebiopsi', 'beinmarg']
 random.shuffle(special_resp)
 special_resp_assignment = {}
 for value in special_resp:
@@ -80,16 +81,25 @@ print()
 # Generate list of random amount of slices
 def simulate_slices():
     slices = []
-    for i in range(1,25):
-        n = random.randint(1,10)
+    for i in range(1,50):
+        n = random.randint(1,1)
         slices.append(n)
     return slices
+
+slices = [1,1,1,3,3,65,1,1,1,1,1,1,1,1,1,1,1,1,1,2,2,2,29,1,1,
+          1,2,5,13,1,1,1,1,1,1,1,1,1,1,1,2,2,2,3,3,4,4,6,14,1,1,1,1,1,1,
+          1,2,2,2,2,2,4,7,1,1,1,1,1,1,1,2,5,7,8,8,1,1,1,1,1,1,1,1,1,1,1,
+          1,1,1,1,1,1,2,2,2,4,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,2,3,
+          6,6,8,1,1,1,1,1,1,1,1,1,2,2,2,4,15,1,1,1,1,1,1,1,2,3,5,10,10,10,
+          1,1,1,1,1,1,6,7,12,1,1,1,1,1,1,2,2,2,2,2,4,4,10,1,1,1,3,10,10,1,
+          1,1,1,1,1,1,2,3,7,53,1,2,3,1,1,1,1,1,1,1,1,1,1,2,2,2,2,2,2,
+          3,3,3,3,3,3,4,5]
 
 # List of samples ready for each day of the week
 def slices_week(days):
     samples_week = []
     for day in days:
-        slices = simulate_slices()
+        #slices = simulate_slices()
         samples_week.append(slices)
     return samples_week
 
