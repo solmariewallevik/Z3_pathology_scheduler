@@ -5,17 +5,17 @@ import Scheduler.problem_setup
 # Set up the problem data
 days_week = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'] # One week
 
-num_doctors = 10 # number of doctors working that week
+num_doctors = 21 # number of doctors working that week
 
 doctors = [f"Doctor {i}" for i in range(num_doctors)] # for the meetings and spes. resp.
 
 unassigned_samples = []
 
-max_points_per_doctor = [24 for i in range(num_doctors)]
+max_points_per_doctor = [50 for i in range(num_doctors)]
 
 doc_routine = ['full_time' for i in range(num_doctors)]
-doc_routine[5] = '1/2'
-doc_routine[6] = '1/3'
+#doc_routine[5] = '1/2'
+#doc_routine[6] = '1/3'
 #doc_routine[7] = '1/2'
 #doc_routine[8] = '1/2'
 #doc_routine[9] = '1/2'
@@ -42,7 +42,7 @@ deductionlist = {doctor : 0 for doctor in doctors}
 # Point to earn with the different routines
 for i in range(len(doc_routine)):
     if doc_routine[i] == 'full_time':
-        max_points_per_doctor[i] = 24
+        max_points_per_doctor[i] = 50
     elif doc_routine[i] == '1/2':
         max_points_per_doctor[i] = 11 #or max_points_per_doctor[i] = 12
     elif doc_routine[i] == '1/3':
@@ -80,17 +80,27 @@ print()
 # Generate list of random amount of slices
 def simulate_slices():
     slices = []
-    for i in range(1,25):
-        n = random.randint(1,10)
+    for i in range(1,100):
+        #n = random.randint(1,10)
+        n = 1
         slices.append(n)
     return slices
+
+slices_real = [1,1,1,3,3,65,1,1,1,1,1,1,1,1,1,1,1,1,1,2,2,2,29,1,1,
+          1,2,5,13,1,1,1,1,1,1,1,1,1,1,1,2,2,2,3,3,4,4,6,14,1,1,1,1,1,1,
+          1,2,2,2,2,2,4,7,1,1,1,1,1,1,1,2,5,7,8,8,1,1,1,1,1,1,1,1,1,1,1,
+          1,1,1,1,1,1,2,2,2,4,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,2,3,
+          6,6,8,1,1,1,1,1,1,1,1,1,2,2,2,4,15,1,1,1,1,1,1,1,2,3,5,10,10,10,
+          1,1,1,1,1,1,6,7,12,1,1,1,1,1,1,2,2,2,2,2,4,4,10,1,1,1,3,10,10,1,
+          1,1,1,1,1,1,2,3,7,53,1,2,3,1,1,1,1,1,1,1,1,1,1,2,2,2,2,2,2,
+          3,3,3,3,3,3,4,5]
 
 # List of samples ready for each day of the week
 def slices_week(days):
     samples_week = []
     for day in days:
-        slices = simulate_slices()
-        samples_week.append(slices)
+        #slices = simulate_slices()
+        samples_week.append(slices_real)
     return samples_week
 
 slices = slices_week(days_week)
@@ -117,7 +127,7 @@ for i, day in enumerate(days_week):
     for i in range(len(max_points_per_doctor)):
         max_points_per_doctor[i] += assigned_points[i]
         if doc_routine[i] == 'full_time':
-            max_points_per_doctor[i] = min(max_points_per_doctor[i], 30) 
+            max_points_per_doctor[i] = min(max_points_per_doctor[i], 50) 
         elif doc_routine[i] == '1/2':
             max_points_per_doctor[i] = min(max_points_per_doctor[i], 18)
         elif doc_routine[i] == '1/3':
