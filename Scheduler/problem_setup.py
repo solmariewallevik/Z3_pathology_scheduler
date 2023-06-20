@@ -37,12 +37,22 @@ def resource_scheduler(slices, num_doctors, max_points_per_doctor, special_resp_
         's': 'Sarkoma-group',
         'r': 'ear-nose-thought-group',
         'y': 'Kidney-group',
-        'oral': 'oral',
         'nevro': 'nevro'
         }
 
     sample_groups = {i: [random.choice(list(spes_table.keys()))] for i in range(num_samples)}
     doctors_spes = {f'Doctor {i}': [random.choice(list(spes_table.keys()))] for i in range(num_doctors)}
+
+    special_sample = {i: [random.choice(special_samples)] for i in range(num_special_samples)}
+    doctor_responsibility = {f'Doctor {i}': ['nålebiopsi','beinmarg','oral'] for i in range(num_doctors)}
+
+    spa = special_resp_assignment
+    # Update the dictionary with the responsibilities that week
+    for doctor, specialties in spa.items():
+        if doctor in doctor_responsibility:
+            doctor_responsibility[doctor] += specialties
+        else:
+            doctor_responsibility[doctor] = specialties
 
     # List with names of the special sampels that day
     todays_special_samples = []
@@ -141,17 +151,14 @@ def resource_scheduler(slices, num_doctors, max_points_per_doctor, special_resp_
                 # Choose a random doctor among the matched doctors for the sample
                 sample_doctor[sample] = random.choice(matched_doctors) # sample y: doctor x
 
-    # Create a dictionary that matches the special samples with the doctor with that responsibility    
-    spa = special_resp_assignment   
-    print(f'todays spes sampels: {todays_special_samples}')
-    matched_resp = {}
-    for doc, resp in spa.items():
-        for samp in todays_special_samples:
-            samp_name = samp.rstrip('_1234567890')
-            resp_name = resp[0]
-            if samp_name == resp_name:
-                matched_resp[doc] = samp_name
-    print(f'The matches found: {matched_resp}')
+    # Create a dictionary that matches each special sample with a doctor with that responsibility
+    special_sample_doctor = {}
+    for sample, sample_groups in special_sample.items():
+        m_doctors = []
+        for doctor, doctor_groups in doctor_responsibility.items():
+            if any(group in sample_groups for group in doctor_groups):
+                m_doctors.append(doctor)
+                special_sample_doctor[sample] = random.choice(m_doctors)
 
     # Create a dictionary that maps each doctor to an integer index
     doctor_indices = {doctor: i for i, doctor in enumerate(doctors_spes.keys())}
@@ -160,7 +167,8 @@ def resource_scheduler(slices, num_doctors, max_points_per_doctor, special_resp_
     spes_sample_index = {
         'CITO'          : 0,
         'ØNH CITO'      : 1,
-        'Gastro CITO'   : 2
+        'Gastro CITO'   : 2,
+        'Lymfom/hema'   : 3
         }
 
     # Assign random time to each sample
@@ -258,11 +266,9 @@ def resource_scheduler(slices, num_doctors, max_points_per_doctor, special_resp_
     for sample, doctor in sample_doctor.items():
         solver.add(assignments[sample][doctor_indices[doctor]] == True)
 
-    # Add the constraint that enforces the matching of doctors' responsibilities with special samples
-    for doc, resp in matched_resp.items():
-        doctor_index = doctor_indices[doc]
-        sample_indices = spes_sample_index[resp]
-        solver.add(spes_assignments[sample_indices][doctor_index])
+    # Add the constraint that each tagged special sample is assigned to the correct tagged doctor
+    for sample, doctor in special_sample_doctor.items():
+        solver.add(spes_assignments[sample][doctor_indices[doctor]] == True)
 
     # Add the constraint that total points assigned to all doctors must equal the sum of points for all samples
     total_assigned_points = Sum([If(assignments[i][j], points[i], 0) for i in range(num_samples) for j in range(num_doctors)])
@@ -274,7 +280,7 @@ def resource_scheduler(slices, num_doctors, max_points_per_doctor, special_resp_
      
     #------------------------------- SICK ------------------------------#
     # This doctor is sick
-    sick[1] = True
+    #sick[1] = True
 
     # Add a constraint that if a doctor is sick, they cannot be assigned any samples or points
     for i in range(num_samples):

@@ -16,24 +16,6 @@ max_points_per_doctor = [24 for i in range(num_doctors)]
 doc_routine = ['full_time' for i in range(num_doctors)]
 doc_routine[5] = '1/2'
 doc_routine[6] = '1/3'
-#doc_routine[7] = '1/2'
-#doc_routine[8] = '1/2'
-#doc_routine[9] = '1/2'
-#doc_routine[10] = '1/2'
-#doc_routine[11] = '1/2'
-#doc_routine[12] = '1/2'
-#doc_routine[13] = '1/2'
-#doc_routine[14] = '1/2'
-#doc_routine[15] = '1/2'
-#doc_routine[16] = '1/2'
-
-#doc_routine[17] = '1/3'
-#doc_routine[18] = '1/3'
-#doc_routine[19] = '1/3'
-#doc_routine[20] = '1/3'
-#doc_routine[21] = '1/3'
-#doc_routine[22] = '1/3'
-#doc_routine[23] = '1/3'
 
 # Store doctors who have earned extra points and the number of extra points they have earned
 #Fratrekkslisten
