@@ -65,7 +65,6 @@ def resource_scheduler(slices, num_doctors, max_points_per_doctor, special_resp_
         184:['r'],185:['r'],186:['r'],
         187:['g'],188:['g'],189:['g'],190:['g'],191:['g'],192:['g'],193:['g'],194:['g'],195:['g'],196:['g'],197:['g'],198:['g'],199:['g'],200:['g'],201:['g'],202:['g'],203:['g'],204:['g'],205:['g'],206:['g'],207:['g'],208:['g'],209:['g'],210:['g']
         }
-
     doctors_spes = {
         'Doctor 0' : ['m','g','hud'],
         'Doctor 1' : ['g','hud'],
@@ -94,8 +93,7 @@ def resource_scheduler(slices, num_doctors, max_points_per_doctor, special_resp_
         0 : ['oral'],1 : ['oral'],2 : ['oral'],
         3 : ['nålebiopsi'],4 : ['nålebiopsi'],5 : ['nålebiopsi'],6 : ['nålebiopsi'],7 : ['nålebiopsi'],8 : ['nålebiopsi'],9 : ['nålebiopsi'],10 : ['nålebiopsi'],11 : ['nålebiopsi'],12 : ['nålebiopsi']
         }
-
-    special_doctor = {
+    doctor_responsibility = {
         'Doctor 0' : ['nålebiopsi','beinmarg'],
         'Doctor 1' : ['nålebiopsi','beinmarg'],
         'Doctor 2' : ['nålebiopsi','beinmarg'],
@@ -122,10 +120,10 @@ def resource_scheduler(slices, num_doctors, max_points_per_doctor, special_resp_
     spa = special_resp_assignment
     # Update the dictionary with the responsibilities that week
     for doctor, specialties in spa.items():
-        if doctor in special_doctor:
-            special_doctor[doctor] += specialties
+        if doctor in doctor_responsibility:
+            doctor_responsibility[doctor] += specialties
         else:
-            special_doctor[doctor] = specialties
+            doctor_responsibility[doctor] = specialties
 
     # List with names of the special sampels that day
     todays_special_samples = []
@@ -250,7 +248,7 @@ def resource_scheduler(slices, num_doctors, max_points_per_doctor, special_resp_
     special_sample_doctor = {}
     for sample, sample_groups in special_sample.items():
         m_doctors = []
-        for doctor, doctor_groups in special_doctor.items():
+        for doctor, doctor_groups in doctor_responsibility.items():
             if any(group in sample_groups for group in doctor_groups):
                 m_doctors.append(doctor)
                 special_sample_doctor[sample] = random.choice(m_doctors)
@@ -507,7 +505,7 @@ def resource_scheduler(slices, num_doctors, max_points_per_doctor, special_resp_
             print(f"{doctor} is assigned samples: {', '.join(assigned_samples)} with a total of {assigned_points} points")
             list_of_all_points.append(assigned_points)
 
-        print(deductionlist)
+        print(f'The deduction list: {deductionlist}')
 
         #The unassigned samples
         not_analyzed_next_day = []
