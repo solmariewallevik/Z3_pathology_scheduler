@@ -6,7 +6,7 @@ def resource_scheduler(slices, num_doctors, max_points_per_doctor, special_resp_
     print(f'Max points per doctor:   {max_points_per_doctor}')
 
     num_samples = len(slices) #number of samples
-    num_special_samples = 13
+    num_special_samples = 20
     print(f'Number of special samples today: {num_special_samples}')
     special_samples = ['CITO','nålebiopsi','beinmarg','M-remisse','oral','PD-11', 'ØNH CITO', 'Gastro CITO'] # CITO = Hasteprøve
 
@@ -39,6 +39,7 @@ def resource_scheduler(slices, num_doctors, max_points_per_doctor, special_resp_
         'r': 'ear-nose-thought-group',
         'y': 'Kidney-group',
         'nevro': 'nevro',
+        'lun' : 'lun',
         'hud' : 'everyone'
         }
 
@@ -70,13 +71,13 @@ def resource_scheduler(slices, num_doctors, max_points_per_doctor, special_resp_
         'Doctor 1' : ['g','hud'],
         'Doctor 2' : ['g','l','hud'],
         'Doctor 3' : ['g','h','hud'],
-        'Doctor 4' : ['s','u','r','hud'],
+        'Doctor 4' : ['s','g','r','l','hud'],
         'Doctor 5' : ['g','hud'],
-        'Doctor 6' : ['l','u','hud'],
-        'Doctor 7' : ['m','hud'],
+        'Doctor 6' : ['lun','hud'],
+        'Doctor 7' : ['m','l','x','u','hud'],
         'Doctor 8' : ['h','hud'],
-        'Doctor 9' : ['m','hud'],
-        'Doctor 10' : ['hud'], #oral
+        'Doctor 9' : ['m','hud','r'],
+        'Doctor 10' : [], #oral
         'Doctor 11' : ['g','hud'],
         'Doctor 12' : ['x','hud'],
         'Doctor 13' : ['y','hud'],
@@ -84,15 +85,18 @@ def resource_scheduler(slices, num_doctors, max_points_per_doctor, special_resp_
         'Doctor 15' : ['x','hud'],
         'Doctor 16' : ['x','hud'],
         'Doctor 17' : ['nevro','hud'],
-        'Doctor 18' : ['u','r','hud'],
+        'Doctor 18' : ['u','r','x','hud'],
         'Doctor 19' : ['r','hud'],
         'Doctor 20' : ['g','hud']
         }
 
     special_sample = {
         0 : ['oral'],1 : ['oral'],2 : ['oral'],
-        3 : ['nålebiopsi'],4 : ['nålebiopsi'],5 : ['nålebiopsi'],6 : ['nålebiopsi'],7 : ['nålebiopsi'],8 : ['nålebiopsi'],9 : ['nålebiopsi'],10 : ['nålebiopsi'],11 : ['nålebiopsi'],12 : ['nålebiopsi']
+        3 : ['nålebiopsi'],4 : ['nålebiopsi'],5 : ['nålebiopsi'],6 : ['nålebiopsi'],7 : ['nålebiopsi'],
+        8 : ['nålebiopsi'],9 : ['nålebiopsi'],10 : ['nålebiopsi'],11 : ['nålebiopsi'],12 : ['nålebiopsi'],
+        13 : ['nålebiopsi'],14:['beinmarg'],15:['beinmarg'],16:['beinmarg'],17:['beinmarg'],18:['nålebiopsi'],19:['nålebiopsi']
         }
+
     doctor_responsibility = {
         'Doctor 0' : ['nålebiopsi','beinmarg'],
         'Doctor 1' : ['nålebiopsi','beinmarg'],
@@ -129,7 +133,7 @@ def resource_scheduler(slices, num_doctors, max_points_per_doctor, special_resp_
     todays_special_samples = []
     #for i in range(num_special_samples):
         #todays_special_samples.append(f'{random.choice(special_samples)}_{i}')
-    # 17 samples
+    # 20 samples
     todays_special_samples.append('oral_0')
     todays_special_samples.append('oral_1')
     todays_special_samples.append('oral_2')
@@ -143,19 +147,19 @@ def resource_scheduler(slices, num_doctors, max_points_per_doctor, special_resp_
     todays_special_samples.append('nålebiopsi_10')
     todays_special_samples.append('nålebiopsi_11')
     todays_special_samples.append('nålebiopsi_12')
-    #todays_special_samples.append('nålebiopsi_13')
-    #todays_special_samples.append('beinmarg_14')
-    #todays_special_samples.append('beinmarg_15')
-    #todays_special_samples.append('beinmarg_16')
-    #todays_special_samples.append('beinmarg_17')
-    #todays_special_samples.append('nålebiopsi_18')
-    #todays_special_samples.append('nålebiopsi_19')
+    todays_special_samples.append('nålebiopsi_13')
+    todays_special_samples.append('beinmarg_14')
+    todays_special_samples.append('beinmarg_15')
+    todays_special_samples.append('beinmarg_16')
+    todays_special_samples.append('beinmarg_17')
+    todays_special_samples.append('nålebiopsi_18')
+    todays_special_samples.append('nålebiopsi_19')
 
     # List with number of slices per special sample
     todays_special_sample_slices = []
     #for samp in range(num_special_samples):
         #todays_special_sample_slices.append(random.randint(1,20)) # NUMBER OF SLICES GENERATED
-    todays_special_sample_slices = [1,1,2,1,2,1,1,1,1,1,1,1,1]#1,1,1,2,3,4,1]
+    todays_special_sample_slices = [1,1,2,1,2,1,1,1,1,1,1,1,1,1,1,1,2,3,4,1]
 
     #dictionary of the sample and the num of slices
     spes_samp_and_slice = dict(zip(todays_special_samples, todays_special_sample_slices))
@@ -252,20 +256,6 @@ def resource_scheduler(slices, num_doctors, max_points_per_doctor, special_resp_
             if any(group in sample_groups for group in doctor_groups):
                 m_doctors.append(doctor)
                 special_sample_doctor[sample] = random.choice(m_doctors)
-
-    # Create a dictionary that matches the special samples with the doctor with that responsibility
-    '''    
-    spa = special_resp_assignment   
-    print(f'todays spes sampels: {todays_special_samples}')
-    matched_resp = {}
-    for doc, resp in spa.items():
-        for samp in todays_special_samples:
-            samp_name = samp.rstrip('_1234567890')
-            resp_name = resp[0]
-            if samp_name == resp_name:
-                matched_resp[doc] = samp_name
-    print(f'Special responsibility match: {matched_resp}')
-    '''
 
     # Create a dictionary that maps each doctor to an integer index
     doctor_indices = {doctor: i for i, doctor in enumerate(doctors_spes.keys())}
@@ -377,12 +367,6 @@ def resource_scheduler(slices, num_doctors, max_points_per_doctor, special_resp_
     for sample, doctor in special_sample_doctor.items():
         solver.add(spes_assignments[sample][doctor_indices[doctor]] == True)
 
-    # Add the constraint that enforces the matching of doctors' responsibilities with special samples
-    #for doc, resp in matched_resp.items():
-        #doctor_index = doctor_indices[doc]
-        #sample_indices = spes_sample_index[resp]
-        #solver.add(spes_assignments[sample_indices][doctor_index])
-
     # Add the constraint that total points assigned to all doctors must equal the sum of points for all samples
     total_assigned_points = Sum([If(assignments[i][j], points[i], 0) for i in range(num_samples) for j in range(num_doctors)])
     solver.add(total_assigned_points == Sum(points))
@@ -492,11 +476,6 @@ def resource_scheduler(slices, num_doctors, max_points_per_doctor, special_resp_
         for doctor in doctors:
             assigned_samples = doctor_assignments[doctor] + special_samples_assignments[doctor]
             assigned_points = sum([points[samples.index(sample)] for sample in doctor_assignments[doctor]]) + sum([spes_points_dic[sample] for sample in special_samples_assignments[doctor]])
-
-            #if True in sick:
-                # check their previous points 
-                #if assigned_points > 25:
-                    #deductionlist[doctor] = 30-assigned_points
 
             if assigned_points > 25:
                 extra_work = assigned_points-25

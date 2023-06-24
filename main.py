@@ -19,12 +19,12 @@ doc_routine = ['full_time' for i in range(num_doctors)]
 #doc_routine[7] = '1/2'
 #doc_routine[8] = '1/2'
 #doc_routine[9] = '1/2'
-#doc_routine[10] = '1/2'
-#doc_routine[11] = '1/2'
+#doc_routine[10] = '1/3'
+#doc_routine[11] = '1/3'
 #doc_routine[12] = '1/2'
-#doc_routine[13] = '1/2'
-#doc_routine[14] = '1/2'
-#doc_routine[15] = '1/2'
+#doc_routine[13] = '1/3'
+#doc_routine[14] = '1/3'
+#doc_routine[15] = '1/3'
 #doc_routine[16] = '1/2'
 
 #doc_routine[17] = '1/3'
@@ -44,9 +44,34 @@ for i in range(len(doc_routine)):
     if doc_routine[i] == 'full_time':
         max_points_per_doctor[i] = 50
     elif doc_routine[i] == '1/2':
-        max_points_per_doctor[i] = 11 #or max_points_per_doctor[i] = 12
+        max_points_per_doctor[i] = 20 #or max_points_per_doctor[i] = 12
     elif doc_routine[i] == '1/3':
-        max_points_per_doctor[i] = 8
+        max_points_per_doctor[i] = 15
+
+'''
+max_points_per_doctor[0]=40
+max_points_per_doctor[1]=40
+max_points_per_doctor[2]=20
+max_points_per_doctor[3]=25
+max_points_per_doctor[4]=25
+max_points_per_doctor[5]=20
+max_points_per_doctor[6]=8
+max_points_per_doctor[7]=35
+max_points_per_doctor[8]=30
+max_points_per_doctor[9]=25
+max_points_per_doctor[10]=8 #oral 
+max_points_per_doctor[11]=8
+max_points_per_doctor[12]=15
+max_points_per_doctor[13]=8
+max_points_per_doctor[14]=15
+max_points_per_doctor[15]=20
+max_points_per_doctor[16]=12
+max_points_per_doctor[17]=8
+max_points_per_doctor[18]=25
+max_points_per_doctor[19]=8
+max_points_per_doctor[20]=30
+'''
+
 
 print(f'Max points per doctor: {max_points_per_doctor}')
 
