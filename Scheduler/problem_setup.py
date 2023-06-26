@@ -1,4 +1,6 @@
 from z3 import *
+#import subprocess
+#import optimathsat
 import random
 
 def resource_scheduler(slices, num_doctors, max_points_per_doctor, special_resp_assignment, deductionlist):
@@ -20,6 +22,7 @@ def resource_scheduler(slices, num_doctors, max_points_per_doctor, special_resp_
     processing_time_special = {} #Dictionary for the generated processing times for special samples, minutes
 
     analyzed = [Bool(f"is_analyzed_{i}") for i in range(num_samples)] # Boolean representation of if a sample has been analyzed
+    num_samples_analyzed = Int('num_samples_analyzed')
 
     not_analyzed = [] # list with all the samples that have not been analyzed
 
@@ -118,6 +121,7 @@ def resource_scheduler(slices, num_doctors, max_points_per_doctor, special_resp_
                 for ky, lst in point_table.items():
                     if value in lst:
                         new_list.append(ky)
+                        break
         return new_list
 
     # Convert the list of special samples to the correct amount of points in a dictionary
@@ -139,17 +143,40 @@ def resource_scheduler(slices, num_doctors, max_points_per_doctor, special_resp_
     spes_points_dic = spes_sample_and_point()
 
     points = slices_to_points() #list of points for todays samples
+    print(f'points: {points}')
+    list_pt = len(points)
+    print(list_pt)
     special_points = special_slices_to_points() #list of the points for the special samples
 
     # Create a dictionary that matches each sample with a doctor based on shared FAGGRUPPE
     sample_doctor = {}
+    d_pt = {}
+
     for sample, sample_groups in sample_groups.items():
         matched_doctors = []
+
         for doctor, doctor_groups in doctors_spes.items():
             if any(group in sample_groups for group in doctor_groups):
                 matched_doctors.append(doctor)
                 # Choose a random doctor among the matched doctors for the sample
-                sample_doctor[sample] = random.choice(matched_doctors) # sample y: doctor x
+                #sample_doctor[sample] = random.choice(matched_doctors) # sample y: doctor x
+        if matched_doctors:
+            matched_doctors.sort(key=lambda d: d_pt.get(d,0))
+
+            if d_pt.get(matched_doctors[0], 0) >= max_points_per_doctor[0]:
+                #find an alternative doctor who has not reached the max points
+                alternative_doctors = [d for d in matched_doctors[1:0] if d_pt.get(d,0) < max_points_per_doctor]
+
+                if alternative_doctors:
+                    selected_doctor = random.choice(alternative_doctors)
+                else:
+                    selected_doctor = matched_doctors[0]
+            else:
+                selected_doctor = matched_doctors[0]
+
+            d_pt[selected_doctor] = d_pt.get(selected_doctor, 0) + 1
+
+            sample_doctor[sample] = selected_doctor
 
     # Create a dictionary that matches each special sample with a doctor with that responsibility
     special_sample_doctor = {}
@@ -197,6 +224,7 @@ def resource_scheduler(slices, num_doctors, max_points_per_doctor, special_resp_
     # Initialize Z3 solver and define variables
     #--------------------------------------------------------------
     solver = Solver()
+    #opti = Optimize()
 
     # Enable proof generation
     #solver.set(unsat_core=True)
@@ -252,13 +280,14 @@ def resource_scheduler(slices, num_doctors, max_points_per_doctor, special_resp_
         # Enforce the constraint that total assigned points (regular + special) for each doctor does not exceed max_points_per_doctor
         solver.add(tap_regular + tap_special <= max_points_per_doctor[j])
 
+    t_regular = []
     # Add the constraint that each doctor has at most max_points_per_doctor points
     for doctor in range(num_doctors):
         # Calculate total assigned points for regular samples for each doctor
         t_regular = Sum([If(sample_vars[sample] == doctor, points[sample], 0) for sample in range(num_samples)])
         # Calculate total assigned points for special samples for each doctor
         t_special = Sum([If(special_sample_vars[sample] == doctor, special_points[sample], 0) for sample in range(num_special_samples)])
-
+        
         # Enforce the constraint that the total assigned points (regular + special) for each doctor does not exceed max_points_per_doctor
         solver.add(t_regular + t_special <= max_points_per_doctor[doctor])
 
@@ -331,13 +360,14 @@ def resource_scheduler(slices, num_doctors, max_points_per_doctor, special_resp_
 
         solver.add(total_processing_time + total_spes_processing_time <= 400) # 400 minutes is one work day, 7 hours.
 
+    
     #---------------------------Check-----------------------------
     # Check if there is a valid solution and print the assignments
     points_for_the_next_day = []
     print(f'Status: {solver.check()}')
     if solver.check() == sat:
         model = solver.model()  
-
+        
         for i in range(num_doctors):
             if model[request_physical_sample[i]]:
                 print(f"Doctor {i} - Request Physical Sample: True")
@@ -367,7 +397,7 @@ def resource_scheduler(slices, num_doctors, max_points_per_doctor, special_resp_
             for j in range(num_doctors):
                 if is_true(model[assignments[i][j]]):
                     doctor_assignments[doctors[j]].append(samples[i])
-    
+
         # Add special sample to doctor's assignments
         for i in range(num_special_samples):
             for j in range(num_doctors):
@@ -385,7 +415,8 @@ def resource_scheduler(slices, num_doctors, max_points_per_doctor, special_resp_
                 if assigned_points > 24:
                     deductionlist[doctor] = 30-assigned_points
 
-            print(f"{doctor} is assigned samples: {', '.join(assigned_samples)} with a total of {assigned_points} points")
+            print(f"{doctor} is assigned samples: {', '.join(assigned_samples)} with a total of")
+            print(f'{assigned_points} points.')
             list_of_all_points.append(assigned_points)
 
         #The unassigned samples
@@ -426,6 +457,38 @@ def resource_scheduler(slices, num_doctors, max_points_per_doctor, special_resp_
             processing_time_in_total = total_processing_time + total_spes_processing_time
             print(f'Total processing time for Doctor {j}: {processing_time_in_total} minutes') 
 
+
+        # Starting the optimization of the program here I think
+        solver = Optimize()
+        solver.maximize(num_samples_analyzed)
+
+        # Add constraints to track the number of assigned samples
+        for i in range(num_samples):
+            solver.add(Or(assignments[i]))
+
+        solver.add(num_samples_analyzed == Sum([If(Or(assignments[i]),1,0) for i in range(num_samples)]))
+
+        #Extract and analyze the optimized values 
+        optimized_assignments = [[model[assignments[i][j]] for j in range(num_doctors)] for i in range(num_samples)]
+        # Analyze the optimized assignments and points
+        num_samples_analyzed = sum([1 for i in range(num_samples) if any(optimized_assignments[i])])
+        print('Number of Samples Analyzed:', num_samples_analyzed)
+
+        for j in range(num_doctors):
+            solver.add(list_of_all_points[j] >= 0) #non-negative constraint
+            solver.add(list_of_all_points[j] <= max_points_per_doctor[j]) #upper bound constraint
+
+        objective = Sum([Abs(max_points_per_doctor[j] - list_of_all_points[j]) for j in range(num_doctors)])
+        solver.minimize(objective)
+
+        #optimized_points = [model.eval(list_of_all_points[j].as_long() for j in range(num_doctors))]
+        numbers = [Int(x) for x in list_of_all_points]
+        #optimized_points = [model.get_interp(point).as_long() if model.evaluate(point) is not None else 0 for point in numbers if point in model]
+        optimized_points = [model[point].as_long() if point in model else 0 for point in numbers]
+
+        print('Points Distribution:', optimized_points)
+
+        # Data passed to the next day
         return points_for_the_next_day, not_analyzed_slices
     
     else:
