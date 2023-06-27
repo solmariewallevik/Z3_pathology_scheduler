@@ -73,7 +73,6 @@ def resource_scheduler(slices, num_doctors, max_points_per_doctor, special_resp_
     # POINTSYSTEM: points that each sample/section has
     # key = points, value = number of sections per sample
     point_table = {
-        0 : [0],
         1 : [1,2,3,4,5],
         2 : [6,7,8,9,10],
         3 : [11,12,13,14,15],
@@ -147,63 +146,26 @@ def resource_scheduler(slices, num_doctors, max_points_per_doctor, special_resp_
     list_pt = len(points)
     special_points = special_slices_to_points() #list of the points for the special samples
 
-    # Create a dictionary that matches each sample with a doctor based on shared FAGGRUPPE
-    #sample_doctor = {}
-    #d_pt = {}
-
-    #for sample, sample_groups in sample_groups.items():
-        #matched_doctors = []
-
-        #for doctor, doctor_groups in doctors_spes.items():
-            #if any(group in sample_groups for group in doctor_groups):
-                #matched_doctors.append(doctor)
-                # Choose a random doctor among the matched doctors for the sample
-                #sample_doctor[sample] = random.choice(matched_doctors) # sample y: doctor x
-        #if matched_doctors:
-            #matched_doctors.sort(key=lambda d: d_pt.get(d,0))
-
-            #if d_pt.get(matched_doctors[0], 0) >= max_points_per_doctor[0]:
-                #alternative_doctors = [d for d in matched_doctors[1:0] if d_pt.get(d,0) < max_points_per_doctor]
-
-                #if alternative_doctors:
-                    #selected_doctor = random.choice(alternative_doctors)
-                #else:
-                    #selected_doctor = matched_doctors[0]
-            #else:
-                #selected_doctor = matched_doctors[0]
-
-            #d_pt[selected_doctor] = d_pt.get(selected_doctor, 0) + 1
     print(f'samples: {sample_groups}')
-    print(f'doctors: {doctors_spes}')
 
     # Create a dictionary that matches each sample with a doctor based on shared FAGGRUPPE
     sample_doctor = {}
-    used_doctors = set() #keep track of doctors already used for matching
-
-    #Match doctors based on shared FAGGRUPPE
     for sample, sample_groups in sample_groups.items():
         matched_doctors = []
         for doctor, doctor_groups in doctors_spes.items():
             if any(group in sample_groups for group in doctor_groups):
                 matched_doctors.append(doctor)
                 # Choose a random doctor among the matched doctors for the sample
-                #sample_doctor[sample] = doctor # sample y: doctor x
+                sample_doctor[sample] = random.choice(matched_doctors) # sample y: doctor x
 
-        match_found = False
-        for doctors in matched_doctors:
-            if doctor not in used_doctors:
-                sample_doctor[sample] = doctor
-                used_doctors.add(doctor)
-                match_found = True
-                break
-        #If no match found based on tags, match randomly with any doctor
-        if not match_found:
-            available_doctors = set(doctors_spes.keys()) - used_doctors
-            if available_doctors:
-                random_doctor = random.choice(list(available_doctors))
-                sample_doctor[sample] = random_doctor
-                used_doctors.add(random_doctor)
+    print(f'samples: {sample_doctor}')
+    print(f'doctors: {doctors_spes}')
 
+    # Create a dictionary that maps each doctor to an integer index
+    doctor_indices = {}
+    for i, doctor in enumerate(doctors):
+        doctor_indices[i] = doctor
+    
     # Create a dictionary that matches each special sample with a doctor with that responsibility
     special_sample_doctor = {}
     for sample, sample_groups in special_sample.items():
@@ -212,10 +174,6 @@ def resource_scheduler(slices, num_doctors, max_points_per_doctor, special_resp_
             if any(group in sample_groups for group in doctor_groups):
                 m_doctors.append(doctor)
                 special_sample_doctor[sample] = random.choice(m_doctors)
-
-    # Create a dictionary that maps each doctor to an integer index
-    doctor_indices = {doctor: i for i, doctor in enumerate(doctors_spes.keys())}
-    sample_indices = {sample: i for i, sample in enumerate(sample_groups.keys())}
 
     # Create a dictionary that maps each special sample to an integer index
     spes_sample_index = {
@@ -318,7 +276,7 @@ def resource_scheduler(slices, num_doctors, max_points_per_doctor, special_resp_
 
     # Add the constraint that each tagged special sample is assigned to the correct tagged doctor
     for sample, doctor in special_sample_doctor.items():
-        solver.add(spes_assignments[sample][doctor_indices[doctor]] == True)
+        solver.add(spes_assignments[sample][doctor.index(doctor)] == True)
 
     # Add the constraint that total points assigned to all doctors must equal the sum of points for all samples
     total_assigned_points = Sum([If(assignments[i][j], points[i], 0) for i in range(num_samples) for j in range(num_doctors)])
@@ -331,63 +289,10 @@ def resource_scheduler(slices, num_doctors, max_points_per_doctor, special_resp_
     #---------------Match Doctors--------------#
 
     # Add the constraint that each tagged sample is assigned to the correct tagged doctor
-    #for sample, doctor in sample_doctor.items():
-        #solver.add(assignments[sample][doctor_indices[doctor]] == True)
-
-
-    #Add the constraint tha each tagged sample is assigned to the correct tagged sample
-    #for sample, doctor in sample_doctor.items():
-        #doctor_index = doctor_indices[doctor]
-        #check if assigning the sample to the doctor exceeds their maximum allowed points
-        #if sum([If(assignments[sample][j], points[samples.index(sample)], 0) for j in range(num_doctors)]) > max_points_per_doctor[doctor_index]:
-            #check if there are ptjer doctors with the same tag
-            #other_doctors = [d for d in sample_doctor.values() if d != doctor]
-            #if len(other_doctors) == 0:
-                #if there are no other doctors with the same tag, pass it to the next day
-                #not_analyzed.append(Not(assignments[sample][doctor_index]))
-            #else:
-                # Assign the sample to a random doctor among the other doctors with the same tag
-                #other_doctor = random.choice(other_doctors)
-                #other_doctor_index = doctor_indices[other_doctor]
-                #solver.add(assignments[sample][other_doctor_index] == True)
-
-    # Add the constraint that each tagged sample is assigned to the correct tagged doctor
     for sample, doctor in sample_doctor.items():
-        doctor_index = doctor_indices[doctor]
-    
-        # Check if the doctor index is within the range of max_points_per_doctor list
-        if doctor_index < len(max_points_per_doctor):
-            # Calculate the total points assigned to the doctor for the sample
-            assigned_points = sum([If(assignments[sample][j], points[sample_indices[sample]], 0) for j in range(num_doctors)])
+        doctor_index = doctor.index(doctor)
+        solver.add(assignments[sample][doctor_index] == True)
 
-            # Create a symbolic variable for the maximum allowed points for the doctor
-            max_points = max_points_per_doctor[doctor_index]
-            solver.add(max_points >= 0)
-
-            # Add the constraint: assigned_points <= max_points
-            solver.add(assigned_points <= max_points)
-
-            # Check if the assigned_points is strictly less than max_points
-            if is_false(solver.check(assigned_points == max_points)):
-                # Check if there are other doctors with the same tag
-                other_doctors = [d for d in sample_doctor.values() if d != doctor]
-                if len(other_doctors) == 0:
-                    # If there are no other doctors with the same tag, pass the sample to the next day
-                    not_analyzed.append(Not(assignments[sample][doctor_index]))
-                else:
-                    # Assign the sample to a random doctor among the other doctors with the same tag
-                    other_doctor = random.choice(other_doctors)
-                    other_doctor_index = doctor_indices[other_doctor]
-                    solver.add(assignments[sample][other_doctor_index] == True)
-        else:
-            # Handle the case where the doctor index is out of range
-            not_analyzed.append(Not(assignments[sample][doctor_index]))
-
-
-
-
-
-     
     #------------------------------- SICK ------------------------------#
     # This doctor is sick
     #sick[1] = True
@@ -405,9 +310,9 @@ def resource_scheduler(slices, num_doctors, max_points_per_doctor, special_resp_
     #-----------------------EVEN DISTRIBUTION---------------------------#
     # Maybe this should be closest possible to max, instead of even distribution.
 
-    doctor_assignments = {doctor: [] for doctor in doctors}  # initialize dictionary for each doctor's assignments
-    special_samples_assignments = {doctor: [] for doctor in doctors}
-    assigned_points = {doctor: [] for doctor in doctors}  # initialize dictionary for each doctor's assigned points
+    #doctor_assignments = {doctor: [] for doctor in doctors}  # initialize dictionary for each doctor's assignments
+    #special_samples_assignments = {doctor: [] for doctor in doctors}
+    #assigned_points = {doctor: [] for doctor in doctors}  # initialize dictionary for each doctor's assigned points
 
     # Calculate the total points assigned to each doctor
     #total_points = [Sum([points[samples.index(sample)] for sample in doctor_assignments[doctor]]) +
@@ -469,22 +374,25 @@ def resource_scheduler(slices, num_doctors, max_points_per_doctor, special_resp_
 
         print(f'New max points per pathologist: {max_points_per_doctor}')
     
+        doctors = [f"Pathologist {i}" for i in range(num_doctors)] #list of doctors, had to define it again at this point...
         doctor_assignments = {doctor: [] for doctor in doctors}  # initialize dictionary for each doctor's assignments
         special_samples_assignments = {doctor: [] for doctor in doctors}  # initialize dictionary for each doctor's special sample assignments
 
         list_of_all_points = []
 
-        # Add regular sample to doctor's assignments
         for i in range(num_samples):
             for j in range(num_doctors):
                 if is_true(model[assignments[i][j]]):
+                    #if i < len(samples) and j < len(doctors):
                     doctor_assignments[doctors[j]].append(samples[i])
 
         # Add special sample to doctor's assignments
         for i in range(num_special_samples):
             for j in range(num_doctors):
-                if is_true(model[spes_assignments[i][j]]):
-                    special_samples_assignments[doctors[j]].append(todays_special_samples[i])
+                if i < len(special_samples) and j < len(doctors):
+                    if is_true(model[spes_assignments[i][j]]):
+                    #if i < len(special_samples) and j < len(doctors):
+                        special_samples_assignments[doctors[j]].append(todays_special_samples[i])
 
         # Print the regular samples and special samples assigned to each doctor and their total points
         print("Sample Assignments and Points:")
@@ -504,8 +412,10 @@ def resource_scheduler(slices, num_doctors, max_points_per_doctor, special_resp_
         #The unassigned samples
         not_analyzed_next_day = []
         for sample in not_analyzed:
-            if is_true(model.evaluate(sample)):
-                not_analyzed_next_day.append(sample)
+           #if is_true(model.evaluate(sample)):
+            #if model[sample] == True:
+            if is_true(sample):
+                        not_analyzed_next_day.append(sample)
 
         not_analyzed_samples = []
         not_analyzed_slices = []
@@ -567,7 +477,7 @@ def resource_scheduler(slices, num_doctors, max_points_per_doctor, special_resp_
         print('Points Distribution:', optimized_points)
 
         # Data passed to the next day
-        return points_for_the_next_day, not_analyzed_slices
+        return points_for_the_next_day, []#not_analyzed_slices
     
     else:
         print("No valid assignment found.")

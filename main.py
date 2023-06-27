@@ -62,7 +62,7 @@ print()
 # Generate list of random amount of slices
 def simulate_slices():
     slices = []
-    for i in range(1,50):
+    for i in range(1,10):
         n = random.randint(1,10)
         slices.append(n)
     return slices
