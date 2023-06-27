@@ -7,7 +7,7 @@ days_week = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'] # One week
 
 num_doctors = 10 # number of doctors working that week
 
-doctors = [f"Doctor {i}" for i in range(num_doctors)] # for the meetings and spes. resp.
+doctors = [f"Pathologist {i}" for i in range(num_doctors)] # for the meetings and spes. resp.
 
 unassigned_samples = []
 
@@ -30,7 +30,7 @@ for i in range(len(doc_routine)):
     elif doc_routine[i] == '1/3':
         max_points_per_doctor[i] = 8
 
-print(f'Max points per doctor: {max_points_per_doctor}')
+print(f'Max points per pathologist: {max_points_per_doctor}')
 
 # Meeting assigned for that week
 meetings = ['Mammamøte', 'Uromøte', 'ØNH møte', 'Thorax møte', 'Gynmøte']
@@ -62,7 +62,7 @@ print()
 # Generate list of random amount of slices
 def simulate_slices():
     slices = []
-    for i in range(1,50):
+    for i in range(1,25):
         n = random.randint(1,10)
         slices.append(n)
     return slices

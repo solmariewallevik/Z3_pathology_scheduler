@@ -5,14 +5,14 @@ import random
 
 def resource_scheduler(slices, num_doctors, max_points_per_doctor, special_resp_assignment, deductionlist):
 
-    print(f'Max points per doctor:   {max_points_per_doctor}')
+    print(f'Max points per pathologist:   {max_points_per_doctor}')
 
     num_samples = len(slices) #number of samples
     num_special_samples = 6 
     special_samples = ['CITO','nålebiopsi','Beinmarg','M-remisse','Oral','PD-11', 'ØNH CITO', 'Gastro CITO'] # CITO = Hasteprøve
 
     samples = [f"Sample_{i}" for i in range(num_samples)] #list of samples
-    doctors = [f"Doctor {i}" for i in range(num_doctors)] #list of doctors
+    doctors = [f"Pathologist {i}" for i in range(num_doctors)] #list of doctors
 
     sick = [False for i in range(num_doctors)] # Boolean representation of wealness status
 
@@ -44,10 +44,10 @@ def resource_scheduler(slices, num_doctors, max_points_per_doctor, special_resp_
         }
 
     sample_groups = {i: [random.choice(list(spes_table.keys()))] for i in range(num_samples)}
-    doctors_spes = {f'Doctor {i}': [random.choice(list(spes_table.keys()))] for i in range(num_doctors)}
+    doctors_spes = {f'Pathologist {i}': [random.choice(list(spes_table.keys()))] for i in range(num_doctors)}
 
     special_sample = {i: [random.choice(special_samples)] for i in range(num_special_samples)}
-    doctor_responsibility = {f'Doctor {i}': ['nålebiopsi','beinmarg','oral'] for i in range(num_doctors)}
+    doctor_responsibility = {f'Pathologist {i}': ['nålebiopsi','beinmarg','oral'] for i in range(num_doctors)}
 
     spa = special_resp_assignment
     # Update the dictionary with the responsibilities that week
@@ -164,7 +164,6 @@ def resource_scheduler(slices, num_doctors, max_points_per_doctor, special_resp_
             matched_doctors.sort(key=lambda d: d_pt.get(d,0))
 
             if d_pt.get(matched_doctors[0], 0) >= max_points_per_doctor[0]:
-                #find an alternative doctor who has not reached the max points
                 alternative_doctors = [d for d in matched_doctors[1:0] if d_pt.get(d,0) < max_points_per_doctor]
 
                 if alternative_doctors:
@@ -175,8 +174,6 @@ def resource_scheduler(slices, num_doctors, max_points_per_doctor, special_resp_
                 selected_doctor = matched_doctors[0]
 
             d_pt[selected_doctor] = d_pt.get(selected_doctor, 0) + 1
-
-            sample_doctor[sample] = selected_doctor
 
     # Create a dictionary that matches each special sample with a doctor with that responsibility
     special_sample_doctor = {}
@@ -217,9 +214,9 @@ def resource_scheduler(slices, num_doctors, max_points_per_doctor, special_resp_
             processing_time_special[sample] = random.randint(41,60)
 
     # Create a list of Boolean variables to represent the assignments of samples to doctors
-    assignments = [[Bool(f'sample_{i}_doctor{j}') for j in range(num_doctors)] for i in range(num_samples)]
+    assignments = [[Bool(f'sample_{i}_pathologist{j}') for j in range(num_doctors)] for i in range(num_samples)]
     # Create a list of Boolean variables to represent the assignments of special samples to doctors
-    spes_assignments = [[Bool(f'special_sample_{i}_doctor{j}') for j in range(num_doctors)] for i in range(num_special_samples)]
+    spes_assignments = [[Bool(f'special_sample_{i}_pathologist{j}') for j in range(num_doctors)] for i in range(num_special_samples)]
 
     # Initialize Z3 solver and define variables
     #--------------------------------------------------------------
@@ -230,7 +227,7 @@ def resource_scheduler(slices, num_doctors, max_points_per_doctor, special_resp_
     #solver.set(unsat_core=True)
 
     sample_vars = [Int(f'Sample {i}') for i in range(num_samples)]
-    doctor_vars = [Int(f'Doctor {i}') for i in range(num_doctors)]
+    doctor_vars = [Int(f'Pathologist {i}') for i in range(num_doctors)]
     special_sample_vars = [Int(f'special_sample{i}') for i in range(num_special_samples)]
 
     total_points = [Int(f'total_points_{i}') for i in range(num_doctors)]
@@ -370,22 +367,22 @@ def resource_scheduler(slices, num_doctors, max_points_per_doctor, special_resp_
         
         for i in range(num_doctors):
             if model[request_physical_sample[i]]:
-                print(f"Doctor {i} - Request Physical Sample: True")
+                print(f"Pathologist {i} - Request Physical Sample: True")
 
         current_pt = list(deductionlist.values())
         current_doctor = list(deductionlist.keys())
         for i in range(len(sick)):
             if sick[i]:
                 max_points_per_doctor[i] = 0
-                print(f'Doctor {i} is sick')
-                deductionlist[f'Doctor {i}'] = current_pt[i]-24
+                print(f'Pathologist {i} is sick')
+                deductionlist[f'Pathologist {i}'] = current_pt[i]-24
             elif sick[i] == False:
                 max_points_per_doctor[i] = 30
 
         if True in sick:
             print(f'Deductionlist: {deductionlist}')
 
-        print(f'New max points per doctor: {max_points_per_doctor}')
+        print(f'New max points per pathologist: {max_points_per_doctor}')
     
         doctor_assignments = {doctor: [] for doctor in doctors}  # initialize dictionary for each doctor's assignments
         special_samples_assignments = {doctor: [] for doctor in doctors}  # initialize dictionary for each doctor's special sample assignments
@@ -455,7 +452,7 @@ def resource_scheduler(slices, num_doctors, max_points_per_doctor, special_resp_
                 processing_time_special[todays_special_samples[i]] for i, spes_assignments in enumerate(doctor_assigned_spes_samp) if spes_assignments
             )
             processing_time_in_total = total_processing_time + total_spes_processing_time
-            print(f'Total processing time for Doctor {j}: {processing_time_in_total} minutes') 
+            print(f'Total processing time for Pathologist {j}: {processing_time_in_total} minutes') 
 
 
         # Starting the optimization of the program here I think
