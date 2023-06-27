@@ -311,9 +311,10 @@ def resource_scheduler(slices, num_doctors, max_points_per_doctor, special_resp_
         # Add the constraint that the sample is either assigned to one doctor or not analyzed
         solver.add(Or(Or([assignments[i][j] for j in range(num_doctors)]), Not(analyzed_sample)))
         # Add the sample to the not_analyzed list if it is not analyzed
-        not_analyzed.append(Not(analyzed_sample))
-
-        #solver.add(Or([assignments[i][j] for j in range(num_doctors)])) #Maybe not
+        for j in range(num_doctors):
+            not_analyzed.append(Or(Not(analyzed_sample), 
+                                   And(analyzed_sample, 
+                                       sum([If(assignments[i][k], points[i], 0) for k in range(num_doctors)]) > max_points_per_doctor[j])))
 
     # Add constraint to ensure each special sample is assigned to exactly one doctor or added to not analyzed
     for i in range(num_special_samples):
@@ -327,10 +328,6 @@ def resource_scheduler(slices, num_doctors, max_points_per_doctor, special_resp_
     for i in range(num_special_samples):
         solver.add(sum([If(spes_assignments[i][j], 1, 0) for j in range(num_doctors)]) <= 1)
 
-    # Add the constraint that each sample is assigned to one doctor
-    #for sample in range(num_samples):
-        #solver.add(And(sample_vars[sample] >= 0, sample_vars[sample] < num_doctors))
-    # Add the constraint that each sample is assigned to one doctor or marked as unanalyzed
     for sample in range(num_samples):
         solver.add(Or(
             [assignments[sample][j] for j in range(num_doctors)] + [not_analyzed[sample]]
@@ -362,6 +359,9 @@ def resource_scheduler(slices, num_doctors, max_points_per_doctor, special_resp_
     # Add the constraint that each tagged sample is assigned to the correct tagged doctor
     for sample, doctor in sample_doctor.items():
         solver.add(assignments[sample][doctor_indices[doctor]] == True)
+    #---------------------------------------------------------------------------------------
+    
+    #---------------------------------------------------------------------------------------
 
     # Add the constraint that each tagged special sample is assigned to the correct tagged doctor
     for sample, doctor in special_sample_doctor.items():
@@ -396,19 +396,19 @@ def resource_scheduler(slices, num_doctors, max_points_per_doctor, special_resp_
     assigned_points = {doctor: [] for doctor in doctors}  # initialize dictionary for each doctor's assigned points
 
     # Calculate the total points assigned to each doctor
-    total_points = [Sum([points[samples.index(sample)] for sample in doctor_assignments[doctor]]) +
-                   Sum([spes_points_dic[sample] for sample in special_samples_assignments[doctor]])
-                   for doctor in doctors]
+    #total_points = [Sum([points[samples.index(sample)] for sample in doctor_assignments[doctor]]) +
+                   #Sum([spes_points_dic[sample] for sample in special_samples_assignments[doctor]])
+                   #for doctor in doctors]
 
     # Calculate the average points per doctor
-    average_points = Sum(total_points) // num_doctors
+    #average_points = Sum(total_points) // num_doctors
 
     # Add constraint to ensure each doctor's points are close to the average
-    for doctor in doctors:
-        doctor_samples = doctor_assignments[doctor] + special_samples_assignments[doctor]
-        assigned_points[doctor] = [points[samples.index(sample)] for sample in doctor_samples]
+    #for doctor in doctors:
+        #doctor_samples = doctor_assignments[doctor] + special_samples_assignments[doctor]
+        #assigned_points[doctor] = [points[samples.index(sample)] for sample in doctor_samples]
 
-        solver.add(Sum(assigned_points[doctor]) == average_points)
+        #solver.add(Sum(assigned_points[doctor]) == average_points)
 
     #----------------------PHYSICAL SAMPLE------------------------------------#
     # Add constraint: Only some doctors request a physical sample
@@ -427,6 +427,8 @@ def resource_scheduler(slices, num_doctors, max_points_per_doctor, special_resp_
         total_spes_processing_time = Sum(doctor_assigned_spes_samp)
 
         solver.add(total_processing_time + total_spes_processing_time <= 400) # 400 minutes is one work day, 7 hours.
+   #-----------------------------------------------------------#
+
 
     #---------------------------Check-----------------------------
     # Check if there is a valid solution and print the assignments
