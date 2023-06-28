@@ -7,7 +7,7 @@ days_week = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'] # One week
 
 num_doctors = 10 # number of doctors working that week
 
-doctors = [f"Doctor {i}" for i in range(num_doctors)] # for the meetings and spes. resp.
+doctors = [f"Pathologist {i}" for i in range(num_doctors)] # for the meetings and spes. resp.
 
 unassigned_samples = []
 
@@ -26,11 +26,11 @@ for i in range(len(doc_routine)):
     if doc_routine[i] == 'full_time':
         max_points_per_doctor[i] = 24
     elif doc_routine[i] == '1/2':
-        max_points_per_doctor[i] = 11 #or max_points_per_doctor[i] = 12
+        max_points_per_doctor[i] = 12
     elif doc_routine[i] == '1/3':
         max_points_per_doctor[i] = 8
 
-print(f'Max points per doctor: {max_points_per_doctor}')
+#print(f'Max points per pathologist: {max_points_per_doctor}')
 
 # Meeting assigned for that week
 meetings = ['Mammamøte', 'Uromøte', 'ØNH møte', 'Thorax møte', 'Gynmøte']
@@ -62,8 +62,8 @@ print()
 # Generate list of random amount of slices
 def simulate_slices():
     slices = []
-    for i in range(1,10):
-        n = random.randint(1,10)
+    for i in range(1,20):
+        n = random.randint(1,30)
         slices.append(n)
     return slices
 
@@ -99,8 +99,8 @@ for i, day in enumerate(days_week):
     for i in range(len(max_points_per_doctor)):
         max_points_per_doctor[i] += assigned_points[i]
         if doc_routine[i] == 'full_time':
-            max_points_per_doctor[i] = min(max_points_per_doctor[i], 30) 
+            max_points_per_doctor[i] = min(max_points_per_doctor[i], 24) 
         elif doc_routine[i] == '1/2':
-            max_points_per_doctor[i] = min(max_points_per_doctor[i], 18)
+            max_points_per_doctor[i] = min(max_points_per_doctor[i], 12)
         elif doc_routine[i] == '1/3':
-            max_points_per_doctor[i] = min(max_points_per_doctor[i], 15)
+            max_points_per_doctor[i] = min(max_points_per_doctor[i], 8)
