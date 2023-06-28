@@ -6,12 +6,12 @@ def resource_scheduler(slices, num_doctors, max_points_per_doctor, special_resp_
     print(f'Max points per doctor:   {max_points_per_doctor}')
 
     num_samples = len(slices) #number of samples
-    num_special_samples = 20
+    num_special_samples = 12
     print(f'Number of special samples today: {num_special_samples}')
     special_samples = ['CITO','nålebiopsi','beinmarg','M-remisse','oral','PD-11', 'ØNH CITO', 'Gastro CITO'] # CITO = Hasteprøve
 
     samples = [f"Sample_{i}" for i in range(num_samples)] #list of samples
-    doctors = [f"Doctor {i}" for i in range(num_doctors)] #list of doctors
+    doctors = [f"Pathologist {i}" for i in range(num_doctors)] #list of doctors
 
     sick = [False for i in range(num_doctors)] # Boolean representation of wealness status
 
@@ -47,55 +47,54 @@ def resource_scheduler(slices, num_doctors, max_points_per_doctor, special_resp_
     #doctors_spes = {f'Doctor {i}': [random.choice(list(spes_table.keys()))] for i in range(num_doctors)}
 
     sample_groups = {
-        0 : ['hud'],1 : ['hud'],2 : ['g'],3 : ['hud'],4 : ['g'],5 : ['m'],
-        6 : ['g'],7 : ['g'],8 : ['g'],9 : ['g'],10 :['g'],11 :['g'],12 :['g'],13 :['g'],14 : ['g'],15 :['g'],16 :['g'],17 :['g'],18 : ['g'],19 : ['g'],20 :['g'],21 :['g'],22 :['g'],
-        23 :['g'],24 : ['l'],25 :['g'],26 : ['g'],27 : ['l'],28 :['g'],
-        29 :['g'],30 :['hud'],31: ['hud'],32 : ['hud'],33 :['hud'],34 :['g'],35 :['g'],36 : ['hud'],37 :['g'],38 : ['hud'],39 : ['h'],40 : ['g'],41 : ['h'],42 : ['g'],43 : ['g'],44 :['g'],45 :['g'],46 : ['g'],47 : ['hud'],48 : ['g'],
-        49 : ['g'],50 : ['hud'],51 : ['hud'],52: ['s'], 53:['g'],54:['hud'],55:['g'],56:['g'], 57:['g'],58:['g'],59:['g'],60:['g'],61:['l'],62:['r'],
-        63:['g'],64:['g'],65:['g'],66:['g'],67:['g'],68:['g'],69:['g'],70:['g'],71:['g'],72:['g'],73:['g'],74:['g'],
-        75:['lun'],
-        76:['hud'],77:['l'],78:['hud'],79:['hud'],80:['hud'],81:['hud'],82:['hud'],83:['x'],84:['hud'],85:['hud'],86:['hud'],87:['hud'],88:['hud'],89:['hud'],90:['hud'],91:['hud'],92:['u'],93:['hud'],94:['u'],95:['m'],
-        96:['h'],97:['h'],98:['h'],99:['h'],100:['h'],101:['h'],102:['h'],103:['h'],104:['h'],105:['h'],106:['hud'],107:['h'],108:['h'],109:['h'],110:['h'],111:['h'],112:['h'],113:['h'],114:['h'],115:['h'],116:['h'],
-        117:['hud'],118:['hud'],119:['r'],120:['g'],121:['hud'],122:['g'],123:['hud'],124:['hud'],125:['hud'],126:['r'],127:['hud'],128:['hud'],129:['hud'],130:['hud'],
-        131:['g'],132:['g'],133:['g'],134:['g'],135:['h'],136:['h'],137:['x'],138:['x'],139:['x'],140:['x'],141:['x'],142:['x'],143:['x'],
-        144:['hud'],145:['hud'],146:['h'],147:['h'],148:['h'],149:['hud'],150:['h'],151:['p'],152:['h'],
-        153:['x'],154:['x'],155:['x'],156:['x'],157:['x'],158:['x'],159:['x'],160:['x'],161:['x'],162:['x'],163:['x'],164:['x'],165:['x'],166:['x'],
-        167:['x'],168:['x'],169:['x'],170:['x'],171:['x'],172:['x'],
-        173:['nevro'],
-        174:['hud'],175:['hud'],176:['hud'],177:['hud'],178:['hud'],179:['r'],180:['u'],181:['u'],182:['u'],183:['u'],
-        184:['r'],185:['r'],186:['r'],
-        187:['g'],188:['g'],189:['g'],190:['g'],191:['g'],192:['g'],193:['g'],194:['g'],195:['g'],196:['g'],197:['g'],198:['g'],199:['g'],200:['g'],201:['g'],202:['g'],203:['g'],204:['g'],205:['g'],206:['g'],207:['g'],208:['g'],209:['g'],210:['g']
+        0 : ['hud'],1:['u'],2:['m'],3: ['hud'],4: ['hud'],5: ['hud'],6: ['hud'],7: ['hud'],8:['m'],9: ['hud'],10: ['hud'],11: ['hud'],12: ['hud'],13: ['hud'],14: ['hud'],15: ['hud'],16: ['hud'],17:['m'],18:['m'],19: ['hud'],20: ['hud'],21:['m'],22: ['hud'],
+        23:['g'],24:['g'],25:['g'],26:['g'],27:['g'],28:['g'],29:['g'],30:['g'],31:['g'],32:['g'],33:['g'],34:['g'],35:['g'],36:['g'],37:['g'],38:['g'],39:['g'],40:['g'],41:['g'],42:['g'],43:['g'],44:['g'],45:['g'],46:['g'],47:['g'],
+        48:['g'],49:['g'],50:['g'],51:['g'],52:['g'],53:['g'],54:['g'],55:['g'],56:['g'],57:['l'],58:['g'],
+        59:['g'],60:['h'],61:['h'],62:['h'],63:['h'],64:['h'],65:['g'],66:['h'],67:['h'],68:['h'],69:['g'],70:['h'],71:['g'],72:['h'],73:['h'],74:['g'],75:['g'],76:['h'],77:['g'],78:['h'],79:['g'],80:['g'],81:['g'],82:['h'],83:['g'],84:['g'],85:['h'],86:['h'],
+        87:['g'],88:['s'],89:['s'],90:['s'],91:['hud'],92:['hud'],93:['hud'],94:['hud'],95:['s'],96:['s'],97:['hud'],98:['hud'],99:['hud'],100:['u'],101:['s'],102:['s'],103:['hud'],104:['u'],105:['u'],106:['u'],
+        107:['g'],108:['g'],109:['g'],110:['g'],111:['g'],112:['hud'],113:['hud'],114:['hud'],115:['hud'],116:['hud'],117:['g'],118:['g'],119:['g'],120:['g'],121:['g'],122:['g'],123:['g'],124:['p'],125:['p'],126:['p'],
+        127:['nevro'],
+        128:['g'],129:['g'],
+        130:['hud'],131:['hud'],132:['hud'],133:['hud'],134:['hud'],135:['hud'],136:['hud'],137:['hud'],138:['hud'],139:['hud'],140:['hud'],141:['hud'],142:['hud'],143:['hud'],144:['hud'],145:['hud'],146:['hud'],147:['hud'],
+        148:['hud'],149:['h'],150:['h'],151:['h'],152:['h'],153:['h'],154:['h'],155:['h'],156:['h'],157:['hud'],158:['h'],159:['h'],160:['h'],161:['h'],162:['h'],163:['h'],164:['h'],165:['hud'],166:['h'],167:['h'],168:['h'],169:['h'],170:['h'],171:['h'],172:['h'],173:['h'],
+        174:['hud'],175:['hud'],176:['m'],177:['r'],178:['r'],179:['u'],
+        180:['hud'],181:['hud'],182:['hud'],183:['r'],184:['r'],185:['r'],186:['r'],187:['hud'],
+        188:['x'],189:['x'],190:['x'],191:['x'],192:['x'],193:['x'],194:['x'],195:['x'],196:['x'],197:['x'],198:['x'],199:['x'],
+        200:['h'],201:['h'],202:['h'],203:['h'],204:['h'],205:['h'],206:['h'],207:['h'],208:['p'],209:['h'],210:['h'],
+        211:['x'],212:['x'],213:['x'],214:['x'],215:['x'],216:['x'],217:['x'],218:['x'],
+        219:['x'],220:['x'],221:['x'],222:['x'],223:['x'],224:['x'],225:['x'],226:['x'],
+        227:['g'],228:['g'],229:['g'],230:['g'],231:['g'],232:['g'],
+        233:['hud'],234:['h'],235:['hud'],236:['hud'],237:['hud'],238:['hud'],239:['hud'],240:['hud'],241:['hud'],242:['hud'],243:['hud'],244:['r'],245:['r'],246:['u'],247:['r'],248:['u'],249:['u'],250:['r'],251:['hud'],252:['u'],253:['r'],254:['u'],255:['u'],
+        256:['r'],257:['r'],258:['r']
         }
     doctors_spes = {
         'Doctor 0' : ['m','g','hud'],
         'Doctor 1' : ['g','hud'],
         'Doctor 2' : ['g','l','hud'],
         'Doctor 3' : ['g','h','hud'],
-        'Doctor 4' : ['s','g','r','l','hud'],
-        'Doctor 5' : ['g','hud'],
-        'Doctor 6' : ['lun','hud'],
-        'Doctor 7' : ['m','l','x','u','hud'],
-        'Doctor 8' : ['h','hud'],
-        'Doctor 9' : ['m','hud','r'],
-        'Doctor 10' : [], #oral
-        'Doctor 11' : ['g','hud'],
-        'Doctor 12' : ['x','hud'],
-        'Doctor 13' : ['y','hud'],
+        'Doctor 4' : ['s','u','g','hud'],
+        'Doctor 5' : ['g','hud','p'],
+        'Doctor 6' : ['nevro','hud'],
+        'Doctor 7' : ['g','hud'],
+        'Doctor 8' : ['hud'],
+        'Doctor 9' : ['h','hud'],
+        'Doctor 10' : ['m','r','hud'], 
+        'Doctor 11' : ['hud'], #oral
+        'Doctor 12' : ['r','hud'],
+        'Doctor 13' : ['x','hud'],
         'Doctor 14' : ['h','p','hud'],
         'Doctor 15' : ['x','hud'],
         'Doctor 16' : ['x','hud'],
-        'Doctor 17' : ['nevro','hud'],
-        'Doctor 18' : ['u','r','x','hud'],
-        'Doctor 19' : ['r','hud'],
-        'Doctor 20' : ['g','hud']
+        'Doctor 17' : ['g','hud'],
+        'Doctor 18' : ['u','h','r','hud'],
+        'Doctor 19' : ['r','hud']
         }
 
     special_sample = {
-        0 : ['oral'],1 : ['oral'],2 : ['oral'],
-        3 : ['nålebiopsi'],4 : ['nålebiopsi'],5 : ['nålebiopsi'],6 : ['nålebiopsi'],7 : ['nålebiopsi'],
-        8 : ['nålebiopsi'],9 : ['nålebiopsi'],10 : ['nålebiopsi'],11 : ['nålebiopsi'],12 : ['nålebiopsi'],
-        13 : ['nålebiopsi'],14:['beinmarg'],15:['beinmarg'],16:['beinmarg'],17:['beinmarg'],18:['nålebiopsi'],19:['nålebiopsi']
-        }
+        0:['oral'],1:['oral'],2:['oral'],3:['oral'],
+        4:['nålebiopsi'],5:['nålebiopsi'],
+        6:['beinmarg'],7:['beinmarg'],8:['beinmarg'],9:['beinmarg'],10:['beinmarg'],11:['beinmarg']
+    }
 
     doctor_responsibility = {
         'Doctor 0' : ['nålebiopsi','beinmarg'],
@@ -108,8 +107,8 @@ def resource_scheduler(slices, num_doctors, max_points_per_doctor, special_resp_
         'Doctor 7' : ['nålebiopsi','beinmarg'],
         'Doctor 8' : ['nålebiopsi','beinmarg'],
         'Doctor 9' : ['nålebiopsi','beinmarg'],
-        'Doctor 10' : ['oral'],
-        'Doctor 11' : ['nålebiopsi','beinmarg'],
+        'Doctor 10' : ['nålebiopsi','beinmarg'],
+        'Doctor 11' : ['oral'],
         'Doctor 12' : ['nålebiopsi','beinmarg'],
         'Doctor 13' : ['nålebiopsi','beinmarg'],
         'Doctor 14' : ['nålebiopsi','beinmarg'],
@@ -117,8 +116,7 @@ def resource_scheduler(slices, num_doctors, max_points_per_doctor, special_resp_
         'Doctor 16' : ['nålebiopsi','beinmarg'],
         'Doctor 17' : ['nålebiopsi','beinmarg'],
         'Doctor 18' : ['nålebiopsi','beinmarg'],
-        'Doctor 19' : ['nålebiopsi','beinmarg'],
-        'Doctor 20' : ['nålebiopsi','beinmarg'],
+        'Doctor 19' : ['nålebiopsi','beinmarg']
         }
 
     spa = special_resp_assignment
@@ -133,33 +131,25 @@ def resource_scheduler(slices, num_doctors, max_points_per_doctor, special_resp_
     todays_special_samples = []
     #for i in range(num_special_samples):
         #todays_special_samples.append(f'{random.choice(special_samples)}_{i}')
-    # 20 samples
+    # 12 samples
     todays_special_samples.append('oral_0')
     todays_special_samples.append('oral_1')
     todays_special_samples.append('oral_2')
-    todays_special_samples.append('nålebiopsi_3')
+    todays_special_samples.append('oral_3')
     todays_special_samples.append('nålebiopsi_4')
     todays_special_samples.append('nålebiopsi_5')
-    todays_special_samples.append('nålebiopsi_6')
-    todays_special_samples.append('nålebiopsi_7')
-    todays_special_samples.append('nålebiopsi_8')
-    todays_special_samples.append('nålebiopsi_9')
-    todays_special_samples.append('nålebiopsi_10')
-    todays_special_samples.append('nålebiopsi_11')
-    todays_special_samples.append('nålebiopsi_12')
-    todays_special_samples.append('nålebiopsi_13')
-    todays_special_samples.append('beinmarg_14')
-    todays_special_samples.append('beinmarg_15')
-    todays_special_samples.append('beinmarg_16')
-    todays_special_samples.append('beinmarg_17')
-    todays_special_samples.append('nålebiopsi_18')
-    todays_special_samples.append('nålebiopsi_19')
+    todays_special_samples.append('beinmarg_6')
+    todays_special_samples.append('beinmarg_7') 
+    todays_special_samples.append('beinmarg_8')
+    todays_special_samples.append('beinmarg_9')
+    todays_special_samples.append('beinmarg_10')
+    todays_special_samples.append('beinmarg_11')
 
     # List with number of slices per special sample
     todays_special_sample_slices = []
     #for samp in range(num_special_samples):
         #todays_special_sample_slices.append(random.randint(1,20)) # NUMBER OF SLICES GENERATED
-    todays_special_sample_slices = [1,1,2,1,2,1,1,1,1,1,1,1,1,1,1,1,2,3,4,1]
+    todays_special_sample_slices = [1,1,1,1,3,1,2,2,1,1,1,1]
 
     #dictionary of the sample and the num of slices
     spes_samp_and_slice = dict(zip(todays_special_samples, todays_special_sample_slices))
@@ -299,7 +289,7 @@ def resource_scheduler(slices, num_doctors, max_points_per_doctor, special_resp_
     #solver.set(unsat_core=True)
 
     sample_vars = [Int(f'Sample {i}') for i in range(num_samples)]
-    doctor_vars = [Int(f'Doctor {i}') for i in range(num_doctors)]
+    doctor_vars = [Int(f'Pathologist {i}') for i in range(num_doctors)]
     special_sample_vars = [Int(f'special_sample{i}') for i in range(num_special_samples)]
 
     total_points = [Int(f'total_points_{i}') for i in range(num_doctors)]
@@ -391,9 +381,9 @@ def resource_scheduler(slices, num_doctors, max_points_per_doctor, special_resp_
 
     #-----------------------EVEN DISTRIBUTION---------------------------#
 
-    doctor_assignments = {doctor: [] for doctor in doctors}  # initialize dictionary for each doctor's assignments
-    special_samples_assignments = {doctor: [] for doctor in doctors}
-    assigned_points = {doctor: [] for doctor in doctors}  # initialize dictionary for each doctor's assigned points
+    #doctor_assignments = {doctor: [] for doctor in doctors}  # initialize dictionary for each doctor's assignments
+    #special_samples_assignments = {doctor: [] for doctor in doctors}
+    #assigned_points = {doctor: [] for doctor in doctors}  # initialize dictionary for each doctor's assigned points
 
     # Calculate the total points assigned to each doctor
     #total_points = [Sum([points[samples.index(sample)] for sample in doctor_assignments[doctor]]) +
@@ -439,14 +429,14 @@ def resource_scheduler(slices, num_doctors, max_points_per_doctor, special_resp_
 
         for i in range(num_doctors):
             if model[request_physical_sample[i]]:
-                print(f"Doctor {i} - Request Physical Sample: True")
+                print(f"Pathologist {i} - Request Physical Sample: True")
 
         current_pt = list(deductionlist.values())
         current_doctor = list(deductionlist.keys())
         for i in range(len(sick)):
             if sick[i]:
                 max_points_per_doctor[i] = 0
-                print(f'Doctor {i} is sick')
+                print(f'Pathologist {i} is sick')
                 deductionlist[f'Doctor {i}'] = current_pt[i]-25
             elif sick[i] == False:
                 max_points_per_doctor[i] = 30
@@ -454,7 +444,7 @@ def resource_scheduler(slices, num_doctors, max_points_per_doctor, special_resp_
         if True in sick:
             print(f'Deductionlist: {deductionlist}')
 
-        print(f'New max points per doctor: {max_points_per_doctor}')
+        print(f'New max points per pathologist: {max_points_per_doctor}')
     
         doctor_assignments = {doctor: [] for doctor in doctors}  # initialize dictionary for each doctor's assignments
         special_samples_assignments = {doctor: [] for doctor in doctors}  # initialize dictionary for each doctor's special sample assignments
@@ -483,7 +473,8 @@ def resource_scheduler(slices, num_doctors, max_points_per_doctor, special_resp_
                 extra_work = assigned_points-25
                 deductionlist[doctor] += extra_work
 
-            print(f"{doctor} is assigned samples: {', '.join(assigned_samples)} with a total of {assigned_points} points")
+            print(f"{doctor} is assigned samples: {', '.join(assigned_samples)} with a total of ")
+            print(f'{assigned_points} points.')
             list_of_all_points.append(assigned_points)
 
         print(f'The deduction list: {deductionlist}')
@@ -524,7 +515,7 @@ def resource_scheduler(slices, num_doctors, max_points_per_doctor, special_resp_
                 processing_time_special[todays_special_samples[i]] for i, spes_assignments in enumerate(doctor_assigned_spes_samp) if spes_assignments
             )
             processing_time_in_total = total_processing_time + total_spes_processing_time
-            print(f'Total processing time for Doctor {j}: {processing_time_in_total} minutes') 
+            print(f'Total processing time for Pathologist {j}: {processing_time_in_total} minutes') 
 
         return points_for_the_next_day, not_analyzed_slices
     
