@@ -20,8 +20,9 @@ def resource_scheduler(slices, num_doctors, max_points_per_doctor, special_resp_
     processing_time_special = {} #Dictionary for the generated processing times for special samples, minutes
 
     analyzed = [Bool(f"is_analyzed_{i}") for i in range(num_samples)] # Boolean representation of if a sample has been analyzed
-
+    num_samples_analyzed = Int('num_samples_analyzed')
     not_analyzed = [] # list with all the samples that have not been analyzed
+
 
     #FAGGRUPPER. Each doctor has 1 or 2 (some have 3 and some none).
     spes_table = {
@@ -425,8 +426,8 @@ def resource_scheduler(slices, num_doctors, max_points_per_doctor, special_resp_
             processing_time_in_total = total_processing_time + total_spes_processing_time
             print(f'Total processing time for Pathologist {j}: {processing_time_in_total} minutes') 
 
-        # Starting the optimization of the program here I think
-        '''
+        # Starting the optimization of the program
+        
         solver = Optimize()
         solver.maximize(num_samples_analyzed)
 
@@ -453,7 +454,7 @@ def resource_scheduler(slices, num_doctors, max_points_per_doctor, special_resp_
         numbers = [Int(x) for x in list_of_all_points]
         #optimized_points = [model.get_interp(point).as_long() if model.evaluate(point) is not None else 0 for point in numbers if point in model]
         optimized_points = [model[point].as_long() if point in model else 0 for point in numbers]
-        '''
+        
 
 
         return points_for_the_next_day, not_analyzed_slices
